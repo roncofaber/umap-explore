@@ -18,10 +18,15 @@
   </header>
 
   <main>
+    <button id="sidebar-toggle" class="sidebar-toggle" title="Toggle controls">‹</button>
     <aside id="controls">
       <details id="umap-explainer">
         <summary>What is UMAP?</summary>
         <p>UMAP (Uniform Manifold Approximation and Projection) finds a low-dimensional map of high-dimensional data that preserves its structure. It works by learning which points are neighbors in the original space, then arranging them so neighbors stay close in the map. Use the controls below to see how each parameter shapes the result.</p>
+        <div class="explainer-links">
+          <a href="https://arxiv.org/abs/1802.03426" target="_blank" rel="noopener">Paper</a>
+          <a href="https://umap-learn.readthedocs.io/" target="_blank" rel="noopener">Docs</a>
+        </div>
       </details>
 
       <div class="control-group">

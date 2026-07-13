@@ -21,7 +21,9 @@ const els = {
   methodUmap:    document.getElementById('method-umap'),
   methodPca:     document.getElementById('method-pca'),
   umapParams:    document.getElementById('umap-params'),
-  paramStatus:   document.getElementById('param-status'),
+  paramStatus:     document.getElementById('param-status'),
+  sidebarToggle:   document.getElementById('sidebar-toggle'),
+  sidebar:         document.getElementById('controls'),
   datasetInfo:   document.getElementById('dataset-info'),
   datasetStats:  document.getElementById('dataset-stats'),
   datasetDesc:   document.getElementById('dataset-desc'),
@@ -63,6 +65,36 @@ async function fetchEmbedding() {
 // ── Dataset metadata (label colors keyed by dataset name) ────────────────────
 
 const datasetInfo = {};
+
+// ── Sidebar collapse ──────────────────────────────────────────────────────────
+
+els.sidebarToggle.addEventListener('click', () => {
+  const collapsed = els.sidebar.classList.toggle('collapsed');
+  els.sidebarToggle.classList.toggle('collapsed', collapsed);
+  // Re-trigger Plotly resize so the plot fills the new space
+  requestAnimationFrame(() => Plotly.relayout(els.plot, {}));
+});
+
+// ── Slider tick positioning ───────────────────────────────────────────────────
+// CSS flex/grid can't perfectly center variable-width labels at thumb positions,
+// so we measure the rendered slider width and place each span absolutely.
+
+function positionTicks(slider) {
+  const container = slider.nextElementSibling;
+  if (!container || !container.classList.contains('slider-ticks')) return;
+  const w = slider.getBoundingClientRect().width;
+  if (!w) return;
+  const steps = parseInt(slider.max) - parseInt(slider.min);
+  const halfThumb = 6.5;
+  container.querySelectorAll('span').forEach((span, i) => {
+    span.style.left = (halfThumb + i * (w - 2 * halfThumb) / steps) + 'px';
+  });
+}
+
+function positionAllTicks() {
+  positionTicks(els.nnSlider);
+  positionTicks(els.mdSlider);
+}
 
 // ── Param status bar ─────────────────────────────────────────────────────────
 
@@ -136,14 +168,17 @@ function makeTrace(emb) {
 }
 
 const AXIS_LABEL_FONT = { family: "'JetBrains Mono', monospace", size: 14, color: '#515978' };
+const TICK_FONT      = { family: "'JetBrains Mono', monospace", size: 10, color: '#8a94b2' };
 const AXIS_BOX = {
   showline: true, linecolor: '#000', linewidth: 1.5, mirror: true,
-  showgrid: false, zeroline: false, showticklabels: false, ticks: '',
+  showgrid: false, zeroline: false,
+  ticks: 'outside', ticklen: 4, tickwidth: 1, tickcolor: '#c0c8d8',
+  tickfont: TICK_FONT, nticks: 5, tickformat: '.1f',
 };
 
 function makeLayout(emb) {
   return {
-    margin: { t: 30, r: 30, b: 50, l: 55 },
+    margin: { t: 30, r: 40, b: 65, l: 70 },
     paper_bgcolor: '#eef0f5',
     plot_bgcolor: '#eef0f5',
     showlegend: false,
@@ -400,6 +435,7 @@ async function init() {
       updateDatasetInfo();
       fetchAndRender();
     }
+    requestAnimationFrame(positionAllTicks);
   } catch (e) {
     console.error('Failed to load datasets:', e);
     els.loading.textContent = 'Failed to connect to server.';

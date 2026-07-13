@@ -123,6 +123,70 @@ main {
   border-top: 1px solid var(--border);
 }
 
+/* ── Explainer links ─────────────────────── */
+.explainer-links {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.4rem 0.75rem 0.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.explainer-links a {
+  font-size: var(--font-xs);
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.explainer-links a:hover { text-decoration: underline; }
+
+/* ── Sidebar collapse ────────────────────── */
+.sidebar-toggle {
+  position: absolute;
+  left: 290px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 50;
+  width: 20px;
+  height: 48px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-left: none;
+  border-radius: 0 6px 6px 0;
+  cursor: pointer;
+  color: var(--text-3);
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: left 0.25s ease, color 0.15s;
+  padding: 0;
+  line-height: 1;
+}
+
+.sidebar-toggle:hover { color: var(--accent); }
+
+main { position: relative; }
+
+#controls {
+  transition: width 0.25s ease, padding 0.25s ease, min-width 0.25s ease;
+  overflow: hidden;
+}
+
+#controls.collapsed {
+  width: 0;
+  min-width: 0;
+  padding: 0;
+}
+
+.sidebar-toggle.collapsed {
+  left: 0;
+}
+
+.sidebar-toggle.collapsed::after { content: '›'; }
+.sidebar-toggle:not(.collapsed)::after { content: '‹'; }
+.sidebar-toggle { font-size: 0; }  /* hide the HTML text, use ::after */
+
 /* ── Dataset field ───────────────────────── */
 .field-label {
   display: block;
@@ -343,14 +407,19 @@ input[type="range"]::-moz-range-thumb {
 
 /* ── Slider tick labels ───────────────────── */
 .slider-ticks {
-  display: flex;
-  justify-content: space-between;
-  padding: 0 6.5px;
+  position: relative;
+  height: 1.1rem;
   font-family: 'JetBrains Mono', monospace;
   font-size: var(--font-2xs);
   color: var(--text-3);
   margin-top: 0.1rem;
   user-select: none;
+}
+
+.slider-ticks span {
+  position: absolute;
+  transform: translateX(-50%);
+  white-space: nowrap;
 }
 
 /* ── Param description ───────────────────── */
