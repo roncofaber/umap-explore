@@ -1,7 +1,8 @@
-import json
 import sys
 import subprocess
-from precompute import make_key
+import h5py
+import numpy as np
+from utils import make_key
 
 
 def test_make_key_basic():
@@ -32,18 +33,19 @@ def test_embedding_output_structure(tmp_path):
     )
     assert result.returncode == 0, result.stderr
 
-    out_file = tmp_path / 'iris.json'
+    out_file = tmp_path / 'iris.h5'
     assert out_file.exists()
-    data = json.loads(out_file.read_text())
 
-    assert '_meta' in data
-    assert data['_meta']['n_points'] == 150
-    assert data['_meta']['label_names'] == ['setosa', 'versicolor', 'virginica']
+    with h5py.File(out_file, 'r') as f:
+        assert '_meta' in f
+        assert int(f['_meta/n_points'][()]) == 150
+        label_names = [s.decode() if isinstance(s, bytes) else s
+                       for s in f['_meta/label_names'][()].tolist()]
+        assert label_names == ['setosa', 'versicolor', 'virginica']
+        assert len(f['_meta/labels'][()]) == 150
 
-    key = '5_0.1_2_euclidean_scaled'
-    assert key in data
-    emb = data[key]
-    assert set(emb.keys()) == {'x', 'y', 'z', 'labels', 'label_names'}
-    assert emb['z'] is None
-    assert len(emb['x']) == len(emb['y']) == 150
-    assert len(emb['labels']) == 150
+        key = '5_0.1_2_euclidean_scaled'
+        assert key in f
+        assert 'x' in f[key] and 'y' in f[key]
+        assert len(f[key]['x']) == len(f[key]['y']) == 150
+        assert 'z' not in f[key]

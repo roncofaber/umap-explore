@@ -1,33 +1,32 @@
-import json
 import pytest
+import h5py
+import numpy as np
 from fastapi.testclient import TestClient
-
-FIXTURE_EMBEDDING = {
-    "_meta": {
-        "n_points": 3,
-        "label_names": ["setosa", "versicolor", "virginica"],
-    },
-    "15_0.1_2_euclidean_scaled": {
-        "x": [1.0, 2.0, 3.0],
-        "y": [0.5, 1.5, 2.5],
-        "z": None,
-        "labels": [0, 1, 2],
-        "label_names": ["setosa", "versicolor", "virginica"],
-    },
-    "pca_2_scaled": {
-        "x": [0.1, 0.2, 0.3],
-        "y": [0.4, 0.5, 0.6],
-        "z": None,
-        "labels": [0, 1, 2],
-        "label_names": ["setosa", "versicolor", "virginica"],
-    },
-}
 
 
 @pytest.fixture(autouse=True)
-def patch_cache(monkeypatch):
+def patch_embeddings_dir(tmp_path, monkeypatch):
+    emb_dir = tmp_path / "embeddings"
+    emb_dir.mkdir()
+
+    with h5py.File(emb_dir / "iris.h5", 'w') as f:
+        meta = f.create_group('_meta')
+        meta.create_dataset('n_points', data=3)
+        meta.create_dataset('labels', data=np.array([0, 1, 2]))
+        meta.create_dataset('label_names',
+                            data=['setosa', 'versicolor', 'virginica'],
+                            dtype=h5py.string_dtype())
+
+        grp = f.create_group('15_0.1_2_euclidean_scaled')
+        grp.create_dataset('x', data=np.array([1.0, 2.0, 3.0]))
+        grp.create_dataset('y', data=np.array([0.5, 1.5, 2.5]))
+
+        grp = f.create_group('pca_2_scaled')
+        grp.create_dataset('x', data=np.array([0.1, 0.2, 0.3]))
+        grp.create_dataset('y', data=np.array([0.4, 0.5, 0.6]))
+
     import app
-    monkeypatch.setitem(app._cache, 'iris', FIXTURE_EMBEDDING)
+    monkeypatch.setattr(app, 'EMBEDDINGS_DIR', emb_dir)
 
 
 @pytest.fixture
@@ -51,10 +50,17 @@ def test_get_embedding(client):
     )
     assert resp.status_code == 200
     data = resp.json()
-    assert data["x"] == [1.0, 2.0, 3.0]
+    assert data["x"] == pytest.approx([1.0, 2.0, 3.0])
     assert data["z"] is None
     assert data["labels"] == [0, 1, 2]
     assert data["label_names"] == ["setosa", "versicolor", "virginica"]
+
+
+def test_get_pca_embedding(client):
+    resp = client.get("/api/embeddings/iris?method=pca&scale=scaled")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["x"] == pytest.approx([0.1, 0.2, 0.3])
 
 
 def test_embedding_key_not_found(client):
@@ -62,14 +68,6 @@ def test_embedding_key_not_found(client):
         "/api/embeddings/iris?n_neighbors=99&min_dist=0.1&n_components=2&metric=euclidean&scale=scaled"
     )
     assert resp.status_code == 404
-
-
-def test_get_pca_embedding(client):
-    resp = client.get("/api/embeddings/iris?method=pca&scale=scaled")
-    assert resp.status_code == 200
-    data = resp.json()
-    assert data["x"] == [0.1, 0.2, 0.3]
-    assert data["z"] is None
 
 
 def test_dataset_not_found(client):

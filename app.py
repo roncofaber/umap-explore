@@ -1,4 +1,3 @@
-import json
 import os
 import re
 from pathlib import Path
@@ -8,6 +7,7 @@ from fastapi.responses import FileResponse
 from typing import Literal
 
 import colorcet as cc
+import h5py
 from datasets.meta import DATASETS_META
 from utils import make_key
 
@@ -18,28 +18,20 @@ def _label_colors(label_names: list | None) -> list | None:
     return [cc.glasbey_dark[i % len(cc.glasbey_dark)] for i in range(len(label_names))]
 
 
+def _decode(arr) -> list:
+    """h5py may return byte strings; decode them."""
+    return [s.decode() if isinstance(s, bytes) else s for s in arr.tolist()]
+
+
 EMBEDDINGS_DIR = Path(os.environ.get("EMBEDDINGS_DIR", "data/embeddings"))
 _STATIC_DIR = Path(__file__).parent / "static"
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# Loaded once at startup; all endpoints read from this cache.
-_cache: dict[str, dict] = {}
 
-
-@app.on_event("startup")
-async def preload_embeddings():
-    for name in DATASETS_META:
-        path = EMBEDDINGS_DIR / f"{name}.json"
-        if path.exists():
-            _cache[name] = json.loads(path.read_text())
-
-
-def _get_cached(dataset_name: str) -> dict:
-    if dataset_name not in _cache:
-        raise HTTPException(status_code=404, detail=f"No embeddings for '{dataset_name}'")
-    return _cache[dataset_name]
+def _h5(dataset_name: str) -> Path:
+    return EMBEDDINGS_DIR / f"{dataset_name}.h5"
 
 
 @app.get("/health")
@@ -56,14 +48,19 @@ def index():
 def list_datasets():
     result = []
     for name, meta in DATASETS_META.items():
-        if name not in _cache:
+        path = _h5(name)
+        if not path.exists():
             continue
-        m = _cache[name].get("_meta", {})
-        label_names = m.get("label_names")
+        with h5py.File(path, 'r') as f:
+            if '_meta' not in f:
+                continue
+            m = f['_meta']
+            n_points = int(m['n_points'][()])
+            label_names = _decode(m['label_names'][()]) if 'label_names' in m else None
         result.append({
             "name": name,
             "label": meta["label"],
-            "n_points": m.get("n_points"),
+            "n_points": n_points,
             "n_features": meta.get("n_features"),
             "description": meta.get("description"),
             "has_labels": label_names is not None,
@@ -86,8 +83,19 @@ def get_embedding(
         raise HTTPException(status_code=400, detail="Invalid dataset name")
     if dataset_name not in DATASETS_META:
         raise HTTPException(status_code=404, detail=f"Unknown dataset '{dataset_name}'")
-    data = _get_cached(dataset_name)
+    path = _h5(dataset_name)
+    if not path.exists():
+        raise HTTPException(status_code=404, detail=f"No embeddings for '{dataset_name}'")
     key = f"pca_{n_components}_{scale}" if method == 'pca' else make_key(n_neighbors, min_dist, n_components, metric, scale)
-    if key not in data:
-        raise HTTPException(status_code=404, detail=f"No embedding for key '{key}'")
-    return data[key]
+    with h5py.File(path, 'r') as f:
+        if key not in f:
+            raise HTTPException(status_code=404, detail=f"No embedding for key '{key}'")
+        grp = f[key]
+        m = f['_meta']
+        return {
+            'x': grp['x'][()].tolist(),
+            'y': grp['y'][()].tolist(),
+            'z': grp['z'][()].tolist() if 'z' in grp else None,
+            'labels': m['labels'][()].tolist(),
+            'label_names': _decode(m['label_names'][()]) if 'label_names' in m else None,
+        }

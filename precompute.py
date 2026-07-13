@@ -1,8 +1,8 @@
 import argparse
 import itertools
-import json
 from pathlib import Path
 
+import h5py
 import numpy as np
 import umap
 from sklearn.decomposition import PCA
@@ -16,7 +16,6 @@ MIN_DIST = [0.0, 0.05, 0.1, 0.25, 0.5, 1.0]
 N_COMPONENTS = [2]
 METRICS = ['euclidean', 'cosine', 'manhattan', 'correlation']
 SCALE = ['scaled', 'raw']
-
 
 
 def compute_embedding(X, n_neighbors, min_dist, n_components, metric):
@@ -39,51 +38,53 @@ def precompute_dataset(dataset_name, output_dir, n_neighbors_list, min_dist_list
 
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    out_file = output_dir / f"{dataset_name}.json"
+    out_file = output_dir / f"{dataset_name}.h5"
 
-    results = json.loads(out_file.read_text()) if out_file.exists() else {}
-    results['_meta'] = {
-        'n_points': data['n_points'],
-        'label_names': data['label_names'],
-    }
+    labels_arr = np.array(data['labels'])
+    label_names = data['label_names']
 
-    combos = list(itertools.product(n_neighbors_list, min_dist_list, n_components_list, metrics_list, scales_list))
-    total = len(combos)
+    with h5py.File(out_file, 'a') as f:
+        # Refresh _meta every run (cheap)
+        if '_meta' in f:
+            del f['_meta']
+        meta = f.create_group('_meta')
+        meta.create_dataset('n_points', data=data['n_points'])
+        meta.create_dataset('labels', data=labels_arr)
+        if label_names is not None:
+            meta.create_dataset('label_names', data=label_names, dtype=h5py.string_dtype())
 
-    for i, (nn, md, nc, metric, scale) in enumerate(combos):
-        key = make_key(nn, md, nc, metric, scale)
-        if key in results:
-            print(f"[{i+1}/{total}] {key} — skipping (cached)")
-            continue
-        print(f"[{i+1}/{total}] {key} — computing...")
-        embedding = compute_embedding(X_by_scale[scale], nn, md, nc, metric)
-        results[key] = {
-            'x': embedding[:, 0].tolist(),
-            'y': embedding[:, 1].tolist(),
-            'z': embedding[:, 2].tolist() if nc == 3 else None,
-            'labels': data['labels'],
-            'label_names': data['label_names'],
-        }
-        out_file.write_text(json.dumps(results))
+        combos = list(itertools.product(
+            n_neighbors_list, min_dist_list, n_components_list, metrics_list, scales_list,
+        ))
+        total = len(combos)
 
-    # PCA — one per scale, deterministic so no random seed needed
-    for scale in scales_list:
-        pca_key = f"pca_2_{scale}"
-        if pca_key in results:
-            print(f"PCA ({scale}) — skipping (cached)")
-        else:
+        for i, (nn, md, nc, metric, scale) in enumerate(combos):
+            key = make_key(nn, md, nc, metric, scale)
+            if key in f:
+                print(f"[{i+1}/{total}] {key} — skipping (cached)")
+                continue
+            print(f"[{i+1}/{total}] {key} — computing...")
+            embedding = compute_embedding(X_by_scale[scale], nn, md, nc, metric)
+            grp = f.create_group(key)
+            grp.create_dataset('x', data=embedding[:, 0], compression='gzip')
+            grp.create_dataset('y', data=embedding[:, 1], compression='gzip')
+            if nc == 3:
+                grp.create_dataset('z', data=embedding[:, 2], compression='gzip')
+            f.flush()
+
+        for scale in scales_list:
+            pca_key = f"pca_2_{scale}"
+            if pca_key in f:
+                print(f"PCA ({scale}) — skipping (cached)")
+                continue
             print(f"PCA ({scale}) — computing...")
             embedding = PCA(n_components=2).fit_transform(X_by_scale[scale])
-            results[pca_key] = {
-                'x': embedding[:, 0].tolist(),
-                'y': embedding[:, 1].tolist(),
-                'z': None,
-                'labels': data['labels'],
-                'label_names': data['label_names'],
-            }
-            out_file.write_text(json.dumps(results))
+            grp = f.create_group(pca_key)
+            grp.create_dataset('x', data=embedding[:, 0], compression='gzip')
+            grp.create_dataset('y', data=embedding[:, 1], compression='gzip')
+            f.flush()
 
-    print(f"Done. {len(results) - 1} embeddings saved to {out_file}")
+    print(f"Done. Saved to {out_file}")
 
 
 def main():
