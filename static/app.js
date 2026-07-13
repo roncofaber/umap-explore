@@ -112,12 +112,12 @@ function makeLayout(emb) {
     yaxis: {
       ...AXIS_BOX,
       range: axisRange(emb.y),
-      scaleanchor: 'x',
-      scaleratio: 1,
       title: { text: 'coord 2', font: AXIS_LABEL_FONT, standoff: 6 },
     },
   };
 }
+
+let snapTimer = null;
 
 function renderPlot(emb) {
   if (state.nComponents === 3 && !emb.z) {
@@ -139,14 +139,29 @@ function renderPlot(emb) {
   const frameData = { x: emb.x, y: emb.y, 'marker.color': trace.marker.color };
   if (state.nComponents === 3) frameData.z = emb.z;
 
-  // Always pass explicit computed ranges so points never leave the viewport
-  const frameLayout = state.nComponents === 2
-    ? { xaxis: { range: axisRange(emb.x) }, yaxis: { range: axisRange(emb.y) } }
-    : {};
+  if (state.nComponents === 2) {
+    // Plotly applies frame layout at the END of animation, not the start.
+    // Pre-expand axes to the union of old+new ranges so markers never leave
+    // the visible area during the transition, then snap to the tight range.
+    const newX = axisRange(emb.x);
+    const newY = axisRange(emb.y);
+    const cur = els.plot.layout;
+    const oldX = (cur.xaxis && cur.xaxis.range) || newX;
+    const oldY = (cur.yaxis && cur.yaxis.range) || newY;
+    Plotly.relayout(els.plot, {
+      'xaxis.range': [Math.min(oldX[0], newX[0]), Math.max(oldX[1], newX[1])],
+      'yaxis.range': [Math.min(oldY[0], newY[0]), Math.max(oldY[1], newY[1])],
+    });
+
+    clearTimeout(snapTimer);
+    snapTimer = setTimeout(() => {
+      Plotly.relayout(els.plot, { 'xaxis.range': newX, 'yaxis.range': newY });
+    }, 430);
+  }
 
   Plotly.animate(
     els.plot,
-    { data: [frameData], traces: [0], layout: frameLayout },
+    { data: [frameData], traces: [0] },
     { transition: { duration: 400, easing: 'cubic-in-out' }, frame: { duration: 400 } },
   );
 }
