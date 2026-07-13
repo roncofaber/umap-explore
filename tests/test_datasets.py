@@ -26,8 +26,16 @@ def test_swiss_roll_shape():
     assert data['n_points'] == 2000
 
 
+def test_breast_cancer_shape():
+    data = DATASETS['breast_cancer']['loader']()
+    assert data['X'].shape == (569, 30)
+    assert len(data['labels']) == 569
+    assert data['label_names'] == ['malignant', 'benign']
+    assert data['n_points'] == 569
+
+
 def test_all_datasets_registered():
-    assert set(DATASETS.keys()) == {'iris', 'mnist', 'swiss_roll'}
+    assert set(DATASETS.keys()) == {'iris', 'mnist', 'swiss_roll', 'breast_cancer'}
     for name, ds in DATASETS.items():
         assert 'label' in ds
         assert callable(ds['loader'])

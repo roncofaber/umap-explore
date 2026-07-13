@@ -175,6 +175,20 @@ select:focus, select:hover { border-color: var(--accent); }
   background: var(--border);
 }
 
+/* ── UMAP-specific params (disabled when PCA selected) ──────────────────── */
+#umap-params {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  transition: opacity 0.2s;
+}
+
+#umap-params.params-disabled {
+  opacity: 0.35;
+  pointer-events: none;
+  user-select: none;
+}
+
 /* ── Control groups ──────────────────────── */
 .control-group {
   display: flex;

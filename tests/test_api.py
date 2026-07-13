@@ -14,6 +14,13 @@ FIXTURE_EMBEDDING = {
         "labels": [0, 1, 2],
         "label_names": ["setosa", "versicolor", "virginica"],
     },
+    "pca_2_scaled": {
+        "x": [0.1, 0.2, 0.3],
+        "y": [0.4, 0.5, 0.6],
+        "z": None,
+        "labels": [0, 1, 2],
+        "label_names": ["setosa", "versicolor", "virginica"],
+    },
 }
 
 
@@ -58,6 +65,14 @@ def test_embedding_key_not_found(client):
         "/api/embeddings/iris?n_neighbors=99&min_dist=0.1&n_components=2&metric=euclidean&scale=scaled"
     )
     assert resp.status_code == 404
+
+
+def test_get_pca_embedding(client):
+    resp = client.get("/api/embeddings/iris?method=pca&scale=scaled")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["x"] == [0.1, 0.2, 0.3]
+    assert data["z"] is None
 
 
 def test_dataset_not_found(client):

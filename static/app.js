@@ -3,6 +3,7 @@ const MIN_DIST_STEPS = [0.0, 0.05, 0.1, 0.25, 0.5, 1.0];
 
 const state = {
   dataset: null,
+  method: 'umap',
   nNeighbors: 15,
   minDist: 0.1,
   metric: 'euclidean',
@@ -17,6 +18,9 @@ const els = {
   mdSlider:      document.getElementById('min-dist-slider'),
   mdValue:       document.getElementById('min-dist-value'),
   metricSelect:  document.getElementById('metric-select'),
+  methodUmap:    document.getElementById('method-umap'),
+  methodPca:     document.getElementById('method-pca'),
+  umapParams:    document.getElementById('umap-params'),
   scaleOn:       document.getElementById('scale-on'),
   scaleOff:      document.getElementById('scale-off'),
   plot:          document.getElementById('plot'),
@@ -40,6 +44,7 @@ function axisRange(arr) {
 
 async function fetchEmbedding() {
   const params = new URLSearchParams({
+    method:       state.method,
     n_neighbors:  state.nNeighbors,
     min_dist:     state.minDist,
     n_components: 2,
@@ -206,6 +211,26 @@ els.mdSlider.addEventListener('input', () => {
 
 els.metricSelect.addEventListener('change', () => {
   state.metric = els.metricSelect.value;
+  fetchAndRender();
+});
+
+els.methodUmap.addEventListener('click', () => {
+  if (state.method === 'umap') return;
+  state.method = 'umap';
+  els.methodUmap.classList.add('active');
+  els.methodPca.classList.remove('active');
+  els.umapParams.classList.remove('params-disabled');
+  state.isFirstRender = true;
+  fetchAndRender();
+});
+
+els.methodPca.addEventListener('click', () => {
+  if (state.method === 'pca') return;
+  state.method = 'pca';
+  els.methodPca.classList.add('active');
+  els.methodUmap.classList.remove('active');
+  els.umapParams.classList.add('params-disabled');
+  state.isFirstRender = true;
   fetchAndRender();
 });
 

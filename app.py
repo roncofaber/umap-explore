@@ -58,10 +58,11 @@ def list_datasets():
 @app.get("/api/embeddings/{dataset_name}")
 def get_embedding(
     dataset_name: str,
-    n_neighbors: int = Query(..., ge=1),
-    min_dist: float = Query(..., ge=0.0, le=2.0),
+    method: Literal['umap', 'pca'] = Query('umap'),
+    n_neighbors: int = Query(15, ge=1),
+    min_dist: float = Query(0.1, ge=0.0, le=2.0),
     n_components: int = Query(2, ge=2, le=2),
-    metric: Literal['euclidean', 'cosine', 'manhattan', 'correlation'] = Query(...),
+    metric: Literal['euclidean', 'cosine', 'manhattan', 'correlation'] = Query('euclidean'),
     scale: Literal['scaled', 'raw'] = Query('scaled'),
 ):
     if not re.match(r'^[a-zA-Z0-9_]+$', dataset_name):
@@ -69,7 +70,7 @@ def get_embedding(
     if dataset_name not in DATASETS:
         raise HTTPException(status_code=404, detail=f"Unknown dataset '{dataset_name}'")
     data = _load_json(dataset_name)
-    key = make_key(n_neighbors, min_dist, n_components, metric, scale)
+    key = f"pca_{n_components}_{scale}" if method == 'pca' else make_key(n_neighbors, min_dist, n_components, metric, scale)
     if key not in data:
         raise HTTPException(status_code=404, detail=f"No embedding for key '{key}'")
     return data[key]

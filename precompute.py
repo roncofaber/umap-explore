@@ -5,6 +5,7 @@ from pathlib import Path
 
 import numpy as np
 import umap
+from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
 from datasets import DATASETS
@@ -66,6 +67,23 @@ def precompute_dataset(dataset_name, output_dir, n_neighbors_list, min_dist_list
             'label_names': data['label_names'],
         }
         out_file.write_text(json.dumps(results))
+
+    # PCA — one per scale, deterministic so no random seed needed
+    for scale in scales_list:
+        pca_key = f"pca_2_{scale}"
+        if pca_key in results:
+            print(f"PCA ({scale}) — skipping (cached)")
+        else:
+            print(f"PCA ({scale}) — computing...")
+            embedding = PCA(n_components=2).fit_transform(X_by_scale[scale])
+            results[pca_key] = {
+                'x': embedding[:, 0].tolist(),
+                'y': embedding[:, 1].tolist(),
+                'z': None,
+                'labels': data['labels'],
+                'label_names': data['label_names'],
+            }
+            out_file.write_text(json.dumps(results))
 
     print(f"Done. {len(results) - 1} embeddings saved to {out_file}")
 

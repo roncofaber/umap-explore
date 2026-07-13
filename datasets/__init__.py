@@ -3,6 +3,7 @@ import numpy as np
 from datasets.iris import load_iris
 from datasets.mnist import load_mnist
 from datasets.swiss_roll import load_swiss_roll
+from datasets.breast_cancer import load_breast_cancer
 
 
 class DatasetResult(TypedDict):
@@ -24,5 +25,9 @@ DATASETS: dict[str, dict] = {
     'swiss_roll': {
         'label': 'Swiss Roll',
         'loader': load_swiss_roll,
+    },
+    'breast_cancer': {
+        'label': 'Breast Cancer',
+        'loader': load_breast_cancer,
     },
 }
