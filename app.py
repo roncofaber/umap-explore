@@ -69,6 +69,34 @@ def list_datasets():
     return result
 
 
+@app.get("/api/data/{dataset_name}")
+def get_data(
+    dataset_name: str,
+    scale: Literal['scaled', 'raw'] = Query('raw'),
+):
+    if not re.match(r'^[a-zA-Z0-9_]+$', dataset_name):
+        raise HTTPException(status_code=400, detail="Invalid dataset name")
+    if dataset_name not in DATASETS_META:
+        raise HTTPException(status_code=404, detail=f"Unknown dataset '{dataset_name}'")
+    path = _h5(dataset_name)
+    if not path.exists():
+        raise HTTPException(status_code=404, detail=f"No data for '{dataset_name}'")
+    with h5py.File(path, 'r') as f:
+        m = f['_meta']
+        if 'X_raw' not in m:
+            raise HTTPException(status_code=404, detail="Feature data not yet available — run add_features_to_h5.py")
+        X = m['X_scaled' if scale == 'scaled' else 'X_raw'][()].tolist()
+        feature_names = _decode(m['feature_names'][()]) if 'feature_names' in m else None
+        labels = m['labels'][()].tolist()
+        label_names = _decode(m['label_names'][()]) if 'label_names' in m else None
+    return {
+        'X': X,
+        'feature_names': feature_names,
+        'labels': labels,
+        'label_names': label_names,
+    }
+
+
 @app.get("/api/embeddings/{dataset_name}")
 def get_embedding(
     dataset_name: str,

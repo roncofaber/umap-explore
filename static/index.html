@@ -104,8 +104,27 @@
           <p class="param-description">How distances between points are measured in the original space. Different metrics can reveal different structure in your data.</p>
         </div>
       </div>
-      <button id="show-code-btn" class="show-code-btn">{ } show code</button>
+      <div class="bottom-actions">
+        <button id="show-code-btn" class="action-btn">{ } code</button>
+        <button id="view-data-btn" class="action-btn">⊞ data</button>
+      </div>
     </aside>
+
+    <div id="data-modal" class="code-modal" hidden>
+      <div class="code-modal-box" style="width:min(860px,94vw)">
+        <div class="code-modal-header">
+          <span class="code-modal-title" id="data-modal-title">Dataset</span>
+          <div class="code-modal-actions">
+            <button id="data-scale-raw" class="code-action-btn active">raw</button>
+            <button id="data-scale-scaled" class="code-action-btn">scaled</button>
+            <button id="close-data-btn" class="code-action-btn">✕</button>
+          </div>
+        </div>
+        <div id="data-table-wrap" class="data-table-wrap">
+          <table id="data-table" class="data-table"></table>
+        </div>
+      </div>
+    </div>
 
     <div id="code-modal" class="code-modal" hidden>
       <div class="code-modal-box">

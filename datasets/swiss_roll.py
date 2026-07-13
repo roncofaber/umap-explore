@@ -7,5 +7,6 @@ def load_swiss_roll():
         'X': X,
         'labels': t.tolist(),
         'label_names': None,
+        'feature_names': ['x', 'y', 'z'],
         'n_points': 2000,
     }

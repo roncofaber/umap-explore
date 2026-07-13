@@ -402,6 +402,89 @@ function generateCode() {
   return lines.join('\n');
 }
 
+// ── Data table modal ──────────────────────────────────────────────────────────
+
+const dataModal      = document.getElementById('data-modal');
+const dataTable      = document.getElementById('data-table');
+const dataModalTitle = document.getElementById('data-modal-title');
+const dataBtnRaw     = document.getElementById('data-scale-raw');
+const dataBtnScaled  = document.getElementById('data-scale-scaled');
+const closeDataBtn   = document.getElementById('close-data-btn');
+const viewDataBtn    = document.getElementById('view-data-btn');
+
+let dataScale = 'raw';
+let cachedData = {};   // { raw: {...}, scaled: {...} } per dataset
+
+function fmt(v) {
+  if (typeof v !== 'number') return v;
+  return Math.abs(v) < 1000 ? v.toFixed(3) : v.toExponential(2);
+}
+
+function renderDataTable(data) {
+  const { X, feature_names, labels, label_names } = data;
+  const n = X.length;
+  const cols = feature_names || X[0].map((_, i) => `f${i}`);
+
+  const headerRow = `<tr>
+    <th>#</th>
+    <th>${label_names ? 'class' : 'value'}</th>
+    ${cols.map(c => `<th>${c}</th>`).join('')}
+  </tr>`;
+
+  const rows = X.map((row, i) => {
+    const label = label_names ? label_names[labels[i]] : fmt(labels[i]);
+    const cells = row.map(v => `<td>${fmt(v)}</td>`).join('');
+    return `<tr><td>${i + 1}</td><td>${label}</td>${cells}</tr>`;
+  }).join('');
+
+  dataTable.innerHTML = `<thead>${headerRow}</thead><tbody>${rows}</tbody>`;
+}
+
+async function loadAndShowData(scale) {
+  const ds = state.dataset;
+  if (!ds) return;
+  dataModalTitle.textContent = datasetInfo[ds]?.label || ds;
+
+  if (cachedData[ds]?.[scale]) {
+    renderDataTable(cachedData[ds][scale]);
+    return;
+  }
+
+  dataTable.innerHTML = '<caption style="color:rgba(255,255,255,0.4);padding:2rem">Loading…</caption>';
+  const resp = await fetch(`/api/data/${ds}?scale=${scale}`);
+  if (!resp.ok) {
+    dataTable.innerHTML = `<caption style="color:#f87171;padding:2rem">${await resp.text()}</caption>`;
+    return;
+  }
+  const data = await resp.json();
+  cachedData[ds] = cachedData[ds] || {};
+  cachedData[ds][scale] = data;
+  renderDataTable(data);
+}
+
+viewDataBtn.addEventListener('click', () => {
+  dataModal.hidden = false;
+  loadAndShowData(dataScale);
+});
+
+closeDataBtn.addEventListener('click', () => { dataModal.hidden = true; });
+dataModal.addEventListener('click', e => { if (e.target === dataModal) dataModal.hidden = true; });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { dataModal.hidden = true; } });
+
+dataBtnRaw.addEventListener('click', () => {
+  dataScale = 'raw';
+  dataBtnRaw.classList.add('active');
+  dataBtnScaled.classList.remove('active');
+  loadAndShowData('raw');
+});
+
+dataBtnScaled.addEventListener('click', () => {
+  dataScale = 'scaled';
+  dataBtnScaled.classList.add('active');
+  dataBtnRaw.classList.remove('active');
+  loadAndShowData('scaled');
+});
+
 const codeModal    = document.getElementById('code-modal');
 const codeBlock    = document.getElementById('code-block');
 const copyCodeBtn  = document.getElementById('copy-code-btn');
