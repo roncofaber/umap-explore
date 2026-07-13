@@ -494,6 +494,16 @@ input[type="range"]::-moz-range-thumb {
 
 .data-table tr:hover td { background: rgba(255,255,255,0.04); }
 
+.data-footer {
+  padding: 0.375rem 1rem;
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--font-xs);
+  color: rgba(255,255,255,0.28);
+  border-top: 1px solid rgba(255,255,255,0.07);
+  flex-shrink: 0;
+}
+
 .code-action-btn.active {
   background: var(--accent);
   border-color: var(--accent);

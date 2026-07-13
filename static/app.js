@@ -406,6 +406,7 @@ function generateCode() {
 
 const dataModal      = document.getElementById('data-modal');
 const dataTable      = document.getElementById('data-table');
+const dataFooter     = document.getElementById('data-footer');
 const dataModalTitle = document.getElementById('data-modal-title');
 const dataBtnRaw     = document.getElementById('data-scale-raw');
 const dataBtnScaled  = document.getElementById('data-scale-scaled');
@@ -440,13 +441,8 @@ function renderDataTable(data) {
     return `<tr><td>${i + 1}</td><td>${label}</td>${cells}</tr>`;
   }).join('');
 
-  const footer = n > MAX_ROWS
-    ? `<tfoot><tr><td colspan="${cols.length + 2}" style="text-align:center;color:rgba(255,255,255,0.3);padding:0.5rem">
-        showing ${MAX_ROWS} of ${n} rows
-       </td></tr></tfoot>`
-    : '';
-
-  dataTable.innerHTML = `<thead>${headerRow}</thead><tbody>${rows}</tbody>${footer}`;
+  dataTable.innerHTML = `<thead>${headerRow}</thead><tbody>${rows}</tbody>`;
+  dataFooter.textContent = n > MAX_ROWS ? `showing ${MAX_ROWS} of ${n} rows` : '';
 }
 
 async function loadAndShowData(scale) {
@@ -478,7 +474,8 @@ viewDataBtn.addEventListener('click', () => {
 
 function closeDataModal() {
   dataModal.hidden = true;
-  dataTable.innerHTML = '';   // free the DOM nodes immediately
+  dataTable.innerHTML = '';
+  dataFooter.textContent = '';
 }
 
 closeDataBtn.addEventListener('click', closeDataModal);
