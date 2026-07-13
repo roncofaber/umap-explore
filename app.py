@@ -60,7 +60,7 @@ def get_embedding(
     dataset_name: str,
     n_neighbors: int = Query(..., ge=1),
     min_dist: float = Query(..., ge=0.0, le=2.0),
-    n_components: int = Query(..., ge=2, le=3),
+    n_components: int = Query(2, ge=2, le=2),
     metric: Literal['euclidean', 'cosine', 'manhattan', 'correlation'] = Query(...),
 ):
     if not re.match(r'^[a-zA-Z0-9_]+$', dataset_name):

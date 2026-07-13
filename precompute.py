@@ -11,7 +11,7 @@ from datasets import DATASETS
 
 N_NEIGHBORS = [5, 10, 15, 20, 30, 50]
 MIN_DIST = [0.0, 0.05, 0.1, 0.25, 0.5, 1.0]
-N_COMPONENTS = [2, 3]
+N_COMPONENTS = [2]
 METRICS = ['euclidean', 'cosine', 'manhattan', 'correlation']
 
 
