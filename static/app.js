@@ -141,6 +141,8 @@ function makeLayout(emb) {
     yaxis: {
       ...AXIS_BOX,
       range: axisRange(emb.y),
+      scaleanchor: 'x',
+      scaleratio: 1,
       title: { text: 'coord 2', font: AXIS_LABEL_FONT, standoff: 6 },
     },
   };

@@ -7,7 +7,7 @@ DATASETS_META = {
     'digits': {
         'label': 'Digits',
         'n_features': 64,
-        'description': '8×8 pixel grayscale images of handwritten digits (0–9). 1 797 samples built into scikit-learn — no download required.',
+        'description': '8×8 pixel grayscale images of handwritten digits (0–9). 1 797 samples built into scikit-learn.',
     },
     'swiss_roll': {
         'label': 'Swiss Roll',
