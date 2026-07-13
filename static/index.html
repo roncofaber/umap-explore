@@ -4,12 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>UMAP Explorer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
   <header>
     <h1>UMAP Explorer</h1>
+    <span class="header-sub">umap.UMAP( … )</span>
   </header>
 
   <main>
@@ -20,49 +24,58 @@
       </details>
 
       <div class="control-group">
-        <label for="dataset-select">Dataset</label>
+        <label class="field-label" for="dataset-select">Dataset</label>
         <select id="dataset-select"></select>
       </div>
 
+      <div class="params-divider">Parameters</div>
+
       <div class="control-group">
-        <label for="n-neighbors-slider">
-          n_neighbors: <span id="n-neighbors-value">15</span>
-        </label>
+        <div class="param-block">
+          <span class="pname">n_neighbors</span><span class="peq"> = </span><span class="pval" id="n-neighbors-value">15</span>
+        </div>
         <input type="range" id="n-neighbors-slider" min="0" max="5" step="1" value="2">
         <p class="param-description">How many nearby points UMAP considers when learning data structure. Low values capture fine local detail; high values reveal the global shape.</p>
       </div>
 
       <div class="control-group">
-        <label for="min-dist-slider">
-          min_dist: <span id="min-dist-value">0.1</span>
-        </label>
+        <div class="param-block">
+          <span class="pname">min_dist</span><span class="peq"> = </span><span class="pval" id="min-dist-value">0.1</span>
+        </div>
         <input type="range" id="min-dist-slider" min="0" max="5" step="1" value="2">
         <p class="param-description">Minimum distance between points in the layout. Lower values pack clusters tightly; higher values spread them out more evenly.</p>
       </div>
 
       <div class="control-group">
-        <label>n_components</label>
-        <div class="toggle-group">
-          <button id="n-components-2d" class="toggle active">2D</button>
-          <button id="n-components-3d" class="toggle">3D</button>
+        <div class="param-block">
+          <span class="pname">n_components</span><span class="peq"> = </span>
+          <div class="toggle-group">
+            <button id="n-components-2d" class="toggle active">2</button>
+            <button id="n-components-3d" class="toggle">3</button>
+          </div>
         </div>
         <p class="param-description">Number of output dimensions. 2D is easier to read; 3D preserves slightly more structure and is rotatable.</p>
       </div>
 
       <div class="control-group">
-        <label for="metric-select">metric</label>
-        <select id="metric-select">
-          <option value="euclidean">euclidean</option>
-          <option value="cosine">cosine</option>
-          <option value="manhattan">manhattan</option>
-          <option value="correlation">correlation</option>
-        </select>
+        <div class="param-block">
+          <span class="pname">metric</span><span class="peq"> = </span>
+          <span class="pval-wrap">
+            <select id="metric-select" class="pval-select">
+              <option value="euclidean">euclidean</option>
+              <option value="cosine">cosine</option>
+              <option value="manhattan">manhattan</option>
+              <option value="correlation">correlation</option>
+            </select>
+            <span class="pval-caret">▾</span>
+          </span>
+        </div>
         <p class="param-description">How distances between points are measured in the original space. Different metrics can reveal different structure in your data.</p>
       </div>
     </aside>
 
     <section id="plot-container">
-      <div id="loading">Loading...</div>
+      <div id="loading">computing…</div>
       <div id="plot"></div>
     </section>
   </main>

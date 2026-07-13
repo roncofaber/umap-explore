@@ -68,8 +68,8 @@ function makeTrace(emb) {
 function makeLayout() {
   const base = {
     margin: { t: 20, r: 20, b: 20, l: 20 },
-    paper_bgcolor: '#f8f9fa',
-    plot_bgcolor: '#f8f9fa',
+    paper_bgcolor: '#eef0f5',
+    plot_bgcolor: '#eef0f5',
     showlegend: false,
     uirevision: state.nComponents,
   };
@@ -106,9 +106,13 @@ function renderPlot(emb) {
   const frameData = { x: emb.x, y: emb.y, 'marker.color': trace.marker.color };
   if (state.nComponents === 3) frameData.z = emb.z;
 
+  const frameLayout = state.nComponents === 2
+    ? { xaxis: { autorange: true, visible: false }, yaxis: { autorange: true, visible: false } }
+    : {};
+
   Plotly.animate(
     els.plot,
-    { data: [frameData], traces: [0] },
+    { data: [frameData], traces: [0], layout: frameLayout },
     { transition: { duration: 400, easing: 'cubic-in-out' }, frame: { duration: 400 } },
   );
 }
