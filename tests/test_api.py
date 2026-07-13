@@ -25,12 +25,9 @@ FIXTURE_EMBEDDING = {
 
 
 @pytest.fixture(autouse=True)
-def patch_embeddings_dir(tmp_path, monkeypatch):
-    emb_dir = tmp_path / "embeddings"
-    emb_dir.mkdir()
-    (emb_dir / "iris.json").write_text(json.dumps(FIXTURE_EMBEDDING))
+def patch_cache(monkeypatch):
     import app
-    monkeypatch.setattr(app, "EMBEDDINGS_DIR", emb_dir)
+    monkeypatch.setitem(app._cache, 'iris', FIXTURE_EMBEDDING)
 
 
 @pytest.fixture

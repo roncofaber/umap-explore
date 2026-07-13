@@ -11,10 +11,12 @@ import colorcet as cc
 from datasets.meta import DATASETS_META
 from utils import make_key
 
+
 def _label_colors(label_names: list | None) -> list | None:
     if not label_names:
         return None
     return [cc.glasbey_dark[i % len(cc.glasbey_dark)] for i in range(len(label_names))]
+
 
 EMBEDDINGS_DIR = Path(os.environ.get("EMBEDDINGS_DIR", "data/embeddings"))
 _STATIC_DIR = Path(__file__).parent / "static"
@@ -22,12 +24,22 @@ _STATIC_DIR = Path(__file__).parent / "static"
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+# Loaded once at startup; all endpoints read from this cache.
+_cache: dict[str, dict] = {}
 
-def _load_json(dataset_name: str) -> dict:
-    path = EMBEDDINGS_DIR / f"{dataset_name}.json"
-    if not path.exists():
+
+@app.on_event("startup")
+async def preload_embeddings():
+    for name in DATASETS_META:
+        path = EMBEDDINGS_DIR / f"{name}.json"
+        if path.exists():
+            _cache[name] = json.loads(path.read_text())
+
+
+def _get_cached(dataset_name: str) -> dict:
+    if dataset_name not in _cache:
         raise HTTPException(status_code=404, detail=f"No embeddings for '{dataset_name}'")
-    return json.loads(path.read_text())
+    return _cache[dataset_name]
 
 
 @app.get("/health")
@@ -44,11 +56,9 @@ def index():
 def list_datasets():
     result = []
     for name, meta in DATASETS_META.items():
-        path = EMBEDDINGS_DIR / f"{name}.json"
-        if not path.exists():
+        if name not in _cache:
             continue
-        data = json.loads(path.read_text())
-        m = data.get("_meta", {})
+        m = _cache[name].get("_meta", {})
         label_names = m.get("label_names")
         result.append({
             "name": name,
@@ -76,7 +86,7 @@ def get_embedding(
         raise HTTPException(status_code=400, detail="Invalid dataset name")
     if dataset_name not in DATASETS_META:
         raise HTTPException(status_code=404, detail=f"Unknown dataset '{dataset_name}'")
-    data = _load_json(dataset_name)
+    data = _get_cached(dataset_name)
     key = f"pca_{n_components}_{scale}" if method == 'pca' else make_key(n_neighbors, min_dist, n_components, metric, scale)
     if key not in data:
         raise HTTPException(status_code=404, detail=f"No embedding for key '{key}'")
