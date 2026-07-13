@@ -1,7 +1,7 @@
 from typing import TypedDict
 import numpy as np
 from datasets.iris import load_iris
-from datasets.mnist import load_mnist
+from datasets.digits import load_digits
 from datasets.swiss_roll import load_swiss_roll
 from datasets.breast_cancer import load_breast_cancer
 
@@ -20,11 +20,11 @@ DATASETS: dict[str, dict] = {
         'n_features': 4,
         'description': 'Sepal and petal measurements for three iris species. A classic benchmark for classification and clustering.',
     },
-    'mnist': {
-        'label': 'MNIST Digits',
-        'loader': load_mnist,
-        'n_features': 784,
-        'description': '28×28 pixel grayscale images of handwritten digits (0–9), subsampled to 3 000 points.',
+    'digits': {
+        'label': 'Digits',
+        'loader': load_digits,
+        'n_features': 64,
+        'description': '8×8 pixel grayscale images of handwritten digits (0–9). 1 797 samples built into scikit-learn — no download required.',
     },
     'swiss_roll': {
         'label': 'Swiss Roll',

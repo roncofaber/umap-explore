@@ -10,12 +10,12 @@ def test_iris_shape():
     assert data['n_points'] == 150
 
 
-def test_mnist_shape():
-    data = DATASETS['mnist']['loader']()
-    assert data['X'].shape == (3000, 784)
-    assert len(data['labels']) == 3000
+def test_digits_shape():
+    data = DATASETS['digits']['loader']()
+    assert data['X'].shape == (1797, 64)
+    assert len(data['labels']) == 1797
     assert len(data['label_names']) == 10
-    assert data['n_points'] == 3000
+    assert data['n_points'] == 1797
 
 
 def test_swiss_roll_shape():
@@ -35,7 +35,7 @@ def test_breast_cancer_shape():
 
 
 def test_all_datasets_registered():
-    assert set(DATASETS.keys()) == {'iris', 'mnist', 'swiss_roll', 'breast_cancer'}
+    assert set(DATASETS.keys()) == {'iris', 'digits', 'swiss_roll', 'breast_cancer'}
     for name, ds in DATASETS.items():
         assert 'label' in ds
         assert callable(ds['loader'])
