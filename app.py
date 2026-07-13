@@ -7,8 +7,14 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from typing import Literal
 
+import colorcet as cc
 from datasets import DATASETS
 from precompute import make_key
+
+def _label_colors(label_names: list | None) -> list | None:
+    if not label_names:
+        return None
+    return [cc.glasbey_dark[i % len(cc.glasbey_dark)] for i in range(len(label_names))]
 
 EMBEDDINGS_DIR = Path(os.environ.get("EMBEDDINGS_DIR", "data/embeddings"))
 _STATIC_DIR = Path(__file__).parent / "static"
@@ -38,11 +44,13 @@ def list_datasets():
             continue
         data = json.loads(path.read_text())
         m = data.get("_meta", {})
+        label_names = m.get("label_names")
         result.append({
             "name": name,
             "label": meta["label"],
             "n_points": m.get("n_points"),
-            "has_labels": m.get("label_names") is not None,
+            "has_labels": label_names is not None,
+            "label_colors": _label_colors(label_names),
         })
     return result
 

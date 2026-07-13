@@ -50,34 +50,50 @@ async function fetchEmbedding() {
   return resp.json();
 }
 
+// ── Dataset metadata (label colors keyed by dataset name) ────────────────────
+
+const datasetInfo = {};
+
 // ── Plotly trace / layout ─────────────────────────────────────────────────────
 
 function makeTrace(emb) {
   const isContinuous = emb.label_names === null;
-  const markerColor = isContinuous
-    ? emb.labels
-    : emb.labels.map(l => l / Math.max(emb.label_names.length - 1, 1));
-  const colorscale = isContinuous ? 'Viridis' : 'Turbo';
   const hoverText = isContinuous
     ? emb.labels.map(v => `value: ${v.toFixed(2)}`)
     : emb.labels.map(l => emb.label_names[l]);
 
+  const marker = { opacity: 0.8 };
+
+  if (isContinuous) {
+    marker.color = emb.labels;
+    marker.colorscale = 'Viridis';
+    marker.showscale = true;
+  } else {
+    const palette = datasetInfo[state.dataset]?.label_colors;
+    marker.color = palette
+      ? emb.labels.map(l => palette[l])
+      : emb.labels.map(l => l / Math.max(emb.label_names.length - 1, 1));
+    if (!palette) { marker.colorscale = 'Turbo'; marker.showscale = false; }
+  }
+
   if (state.nComponents === 3) {
+    marker.size = 3;
     return {
       type: 'scatter3d', mode: 'markers',
       x: emb.x, y: emb.y, z: emb.z,
       text: hoverText,
       hovertemplate: '%{text}<extra></extra>',
-      marker: { size: 3, color: markerColor, colorscale, showscale: isContinuous, opacity: 0.8 },
+      marker,
     };
   }
 
+  marker.size = 5;
   return {
     type: 'scattergl', mode: 'markers',
     x: emb.x, y: emb.y,
     text: hoverText,
     hovertemplate: '%{text}<extra></extra>',
-    marker: { size: 5, color: markerColor, colorscale, showscale: isContinuous, opacity: 0.8 },
+    marker,
   };
 }
 
@@ -256,6 +272,7 @@ async function init() {
   try {
     const datasets = await fetch('/api/datasets').then(r => r.json());
     datasets.forEach(ds => {
+      datasetInfo[ds.name] = ds;
       const opt = document.createElement('option');
       opt.value = ds.name;
       opt.textContent = ds.label;
