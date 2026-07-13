@@ -539,9 +539,9 @@ input[type="range"]::-moz-range-thumb {
 /* ── Legend ──────────────────────────────── */
 #legend {
   position: absolute;
-  /* inside top-right of axes box (margin.t=30, margin.r=30) */
-  top: 38px;
-  right: 38px;
+  /* exact pixel position set by repositionLegend() in app.js */
+  top: 0;
+  right: 0;
   display: flex;
   flex-direction: column;
   gap: 0.275rem;

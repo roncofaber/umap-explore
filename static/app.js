@@ -76,7 +76,7 @@ els.sidebarToggle.addEventListener('click', () => {
   const collapsed = els.sidebar.classList.toggle('collapsed');
   els.sidebarToggle.classList.toggle('collapsed', collapsed);
   updateToggleLabel();
-  requestAnimationFrame(() => Plotly.relayout(els.plot, {}));
+  requestAnimationFrame(() => { Plotly.relayout(els.plot, {}); repositionLegend(); });
 });
 
 updateToggleLabel();
@@ -130,6 +130,18 @@ function updateDatasetInfo() {
 }
 
 // ── Legend ────────────────────────────────────────────────────────────────────
+
+function repositionLegend() {
+  if (!els.legend || !els.legend.children.length) return;
+  // .nsewdrag is Plotly's drag rect that exactly covers the axes box
+  const drag = els.plot.querySelector('.nsewdrag');
+  if (!drag) return;
+  const wrapper = els.plot.parentElement;          // #plot-wrapper, position:relative
+  const wRect   = wrapper.getBoundingClientRect();
+  const dRect   = drag.getBoundingClientRect();
+  els.legend.style.top   = Math.round(dRect.top   - wRect.top   + 8) + 'px';
+  els.legend.style.right = Math.round(wRect.right  - dRect.right + 8) + 'px';
+}
 
 function updateLegend(emb) {
   if (emb.label_names === null) { els.legend.innerHTML = ''; return; }
@@ -257,6 +269,7 @@ async function fetchAndRender() {
     const emb = await fetchEmbedding();
     renderPlot(emb);
     updateLegend(emb);
+    requestAnimationFrame(repositionLegend);
   } catch (e) {
     console.error('Failed to load embedding:', e);
   } finally {
