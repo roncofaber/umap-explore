@@ -25,7 +25,6 @@ def compute_embedding(X, n_neighbors, min_dist, n_components, metric):
         min_dist=min_dist,
         n_components=n_components,
         metric=metric,
-        random_state=42,
     )
     return reducer.fit_transform(X)
 
