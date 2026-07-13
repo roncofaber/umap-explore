@@ -237,7 +237,6 @@ els.methodUmap.addEventListener('click', () => {
   els.methodUmap.classList.add('active');
   els.methodPca.classList.remove('active');
   els.umapParams.classList.remove('params-disabled');
-  state.isFirstRender = true;
   fetchAndRender();
 });
 
@@ -247,7 +246,6 @@ els.methodPca.addEventListener('click', () => {
   els.methodPca.classList.add('active');
   els.methodUmap.classList.remove('active');
   els.umapParams.classList.add('params-disabled');
-  state.isFirstRender = true;
   fetchAndRender();
 });
 
@@ -256,7 +254,6 @@ els.scaleOn.addEventListener('click', () => {
   state.scale = 'scaled';
   els.scaleOn.classList.add('active');
   els.scaleOff.classList.remove('active');
-  state.isFirstRender = true;
   fetchAndRender();
 });
 
@@ -265,7 +262,6 @@ els.scaleOff.addEventListener('click', () => {
   state.scale = 'raw';
   els.scaleOff.classList.add('active');
   els.scaleOn.classList.remove('active');
-  state.isFirstRender = true;
   fetchAndRender();
 });
 
