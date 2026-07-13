@@ -49,6 +49,8 @@ def list_datasets():
             "name": name,
             "label": meta["label"],
             "n_points": m.get("n_points"),
+            "n_features": meta.get("n_features"),
+            "description": meta.get("description"),
             "has_labels": label_names is not None,
             "label_colors": _label_colors(label_names),
         })

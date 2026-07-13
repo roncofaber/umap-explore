@@ -156,6 +156,31 @@ select {
 
 select:focus, select:hover { border-color: var(--accent); }
 
+/* ── Dataset info card ───────────────────── */
+.dataset-info {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.5rem 0.625rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.dataset-stats {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--font-2xs);
+  color: var(--text-3);
+}
+
+.dataset-stats .stat-sep { margin: 0 0.3em; }
+
+.dataset-desc {
+  font-size: var(--font-xs);
+  color: var(--text-2);
+  line-height: 1.5;
+}
+
 /* ── Parameters divider ──────────────────── */
 .params-divider {
   font-size: var(--font-2xs);

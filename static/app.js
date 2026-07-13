@@ -21,6 +21,9 @@ const els = {
   methodUmap:    document.getElementById('method-umap'),
   methodPca:     document.getElementById('method-pca'),
   umapParams:    document.getElementById('umap-params'),
+  datasetInfo:   document.getElementById('dataset-info'),
+  datasetStats:  document.getElementById('dataset-stats'),
+  datasetDesc:   document.getElementById('dataset-desc'),
   scaleOn:       document.getElementById('scale-on'),
   scaleOff:      document.getElementById('scale-off'),
   plot:          document.getElementById('plot'),
@@ -59,6 +62,20 @@ async function fetchEmbedding() {
 // ── Dataset metadata (label colors keyed by dataset name) ────────────────────
 
 const datasetInfo = {};
+
+// ── Dataset info card ─────────────────────────────────────────────────────────
+
+function updateDatasetInfo() {
+  const ds = datasetInfo[state.dataset];
+  if (!ds) { els.datasetInfo.hidden = true; return; }
+
+  const nClasses = ds.label_colors ? ds.label_colors.length : '—';
+  const classLabel = ds.has_labels ? `${nClasses} class${nClasses !== 1 ? 'es' : ''}` : 'continuous';
+  els.datasetStats.innerHTML =
+    `${ds.n_points} points<span class="stat-sep">·</span>${ds.n_features} features<span class="stat-sep">·</span>${classLabel}`;
+  els.datasetDesc.textContent = ds.description || '';
+  els.datasetInfo.hidden = false;
+}
 
 // ── Legend ────────────────────────────────────────────────────────────────────
 
@@ -255,6 +272,7 @@ els.scaleOff.addEventListener('click', () => {
 els.datasetSelect.addEventListener('change', () => {
   state.dataset = els.datasetSelect.value;
   state.isFirstRender = true;
+  updateDatasetInfo();
   fetchAndRender();
 });
 
@@ -278,6 +296,7 @@ async function init() {
 
     if (datasets.length > 0) {
       state.dataset = datasets[0].name;
+      updateDatasetInfo();
       fetchAndRender();
     }
   } catch (e) {
