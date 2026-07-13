@@ -10,9 +10,11 @@ COPY app.py utils.py ./
 COPY datasets/meta.py datasets/meta.py
 RUN touch datasets/__init__.py
 
-# Static frontend and pre-computed embeddings
+# Static frontend
 COPY static/ static/
-COPY data/embeddings/ data/embeddings/
+
+# Mount point for the fly volume containing pre-computed embeddings
+RUN mkdir -p data/embeddings
 
 EXPOSE 8080
 
