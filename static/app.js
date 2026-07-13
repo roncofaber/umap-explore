@@ -24,6 +24,17 @@ const els = {
   loading:       document.getElementById('loading'),
 };
 
+// Compute axis range with 6% padding, safe for large arrays
+function axisRange(arr) {
+  let mn = Infinity, mx = -Infinity;
+  for (let i = 0; i < arr.length; i++) {
+    if (arr[i] < mn) mn = arr[i];
+    if (arr[i] > mx) mx = arr[i];
+  }
+  const pad = (mx - mn) * 0.06;
+  return [mn - pad, mx + pad];
+}
+
 async function fetchEmbedding() {
   const params = new URLSearchParams({
     n_neighbors:  state.nNeighbors,
@@ -65,17 +76,24 @@ function makeTrace(emb) {
   };
 }
 
-function makeLayout() {
+const AXIS_LABEL_FONT = { family: "'JetBrains Mono', monospace", size: 10, color: '#515978' };
+const AXIS_BOX = {
+  showline: true, linecolor: '#000', linewidth: 1.5, mirror: true,
+  showgrid: false, zeroline: false, showticklabels: false, ticks: '',
+};
+
+function makeLayout(emb) {
   const base = {
-    margin: { t: 20, r: 20, b: 20, l: 20 },
+    margin: { t: 30, r: 30, b: 50, l: 55 },
     paper_bgcolor: '#eef0f5',
     plot_bgcolor: '#eef0f5',
     showlegend: false,
-    uirevision: state.nComponents,
   };
+
   if (state.nComponents === 3) {
     return {
       ...base,
+      uirevision: 'camera-3d',
       scene: {
         xaxis: { visible: false },
         yaxis: { visible: false },
@@ -83,7 +101,22 @@ function makeLayout() {
       },
     };
   }
-  return { ...base, xaxis: { visible: false }, yaxis: { visible: false } };
+
+  return {
+    ...base,
+    xaxis: {
+      ...AXIS_BOX,
+      range: axisRange(emb.x),
+      title: { text: 'coord 1', font: AXIS_LABEL_FONT, standoff: 6 },
+    },
+    yaxis: {
+      ...AXIS_BOX,
+      range: axisRange(emb.y),
+      scaleanchor: 'x',
+      scaleratio: 1,
+      title: { text: 'coord 2', font: AXIS_LABEL_FONT, standoff: 6 },
+    },
+  };
 }
 
 function renderPlot(emb) {
@@ -92,7 +125,7 @@ function renderPlot(emb) {
     return;
   }
   const trace = makeTrace(emb);
-  const layout = makeLayout();
+  const layout = makeLayout(emb);
   const dimensionChanged = state.prevNComponents !== null
     && state.prevNComponents !== state.nComponents;
   state.prevNComponents = state.nComponents;
@@ -106,8 +139,9 @@ function renderPlot(emb) {
   const frameData = { x: emb.x, y: emb.y, 'marker.color': trace.marker.color };
   if (state.nComponents === 3) frameData.z = emb.z;
 
+  // Always pass explicit computed ranges so points never leave the viewport
   const frameLayout = state.nComponents === 2
-    ? { xaxis: { autorange: true, visible: false }, yaxis: { autorange: true, visible: false } }
+    ? { xaxis: { range: axisRange(emb.x) }, yaxis: { range: axisRange(emb.y) } }
     : {};
 
   Plotly.animate(
@@ -129,16 +163,24 @@ async function fetchAndRender() {
   }
 }
 
+// Debounce: update the value label immediately, but wait 300 ms of
+// inactivity before fetching so rapid slider drags don't queue up requests
+let renderTimer = null;
+function scheduleRender() {
+  clearTimeout(renderTimer);
+  renderTimer = setTimeout(fetchAndRender, 300);
+}
+
 els.nnSlider.addEventListener('input', () => {
   state.nNeighbors = N_NEIGHBORS_STEPS[parseInt(els.nnSlider.value)];
   els.nnValue.textContent = state.nNeighbors;
-  fetchAndRender();
+  scheduleRender();
 });
 
 els.mdSlider.addEventListener('input', () => {
   state.minDist = MIN_DIST_STEPS[parseInt(els.mdSlider.value)];
   els.mdValue.textContent = state.minDist;
-  fetchAndRender();
+  scheduleRender();
 });
 
 els.btn2d.addEventListener('click', () => {
