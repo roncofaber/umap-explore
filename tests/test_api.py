@@ -50,6 +50,7 @@ def test_get_embedding(client):
     assert data["x"] == [1.0, 2.0, 3.0]
     assert data["z"] is None
     assert data["labels"] == [0, 1, 2]
+    assert data["label_names"] == ["setosa", "versicolor", "virginica"]
 
 
 def test_embedding_key_not_found(client):

@@ -1,14 +1,17 @@
 import json
 import os
+import re
 from pathlib import Path
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from typing import Literal
 
 from datasets import DATASETS
 from precompute import make_key
 
 EMBEDDINGS_DIR = Path(os.environ.get("EMBEDDINGS_DIR", "data/embeddings"))
+_STATIC_DIR = Path(__file__).parent / "static"
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -23,7 +26,7 @@ def _load_json(dataset_name: str) -> dict:
 
 @app.get("/")
 def index():
-    return FileResponse("static/index.html")
+    return FileResponse(_STATIC_DIR / "index.html")
 
 
 @app.get("/api/datasets")
@@ -45,8 +48,15 @@ def list_datasets():
 
 
 @app.get("/api/embeddings/{dataset_name}")
-def get_embedding(dataset_name: str, n_neighbors: int, min_dist: float,
-                  n_components: int, metric: str):
+def get_embedding(
+    dataset_name: str,
+    n_neighbors: int = Query(..., ge=1),
+    min_dist: float = Query(..., ge=0.0, le=2.0),
+    n_components: int = Query(..., ge=2, le=3),
+    metric: Literal['euclidean', 'cosine', 'manhattan', 'correlation'] = Query(...),
+):
+    if not re.match(r'^[a-zA-Z0-9_]+$', dataset_name):
+        raise HTTPException(status_code=400, detail="Invalid dataset name")
     if dataset_name not in DATASETS:
         raise HTTPException(status_code=404, detail=f"Unknown dataset '{dataset_name}'")
     data = _load_json(dataset_name)

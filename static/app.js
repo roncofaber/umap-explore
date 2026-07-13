@@ -87,6 +87,10 @@ function makeLayout() {
 }
 
 function renderPlot(emb) {
+  if (state.nComponents === 3 && !emb.z) {
+    console.error('3D requested but embedding has no z data');
+    return;
+  }
   const trace = makeTrace(emb);
   const layout = makeLayout();
   const dimensionChanged = state.prevNComponents !== null
@@ -161,22 +165,28 @@ els.datasetSelect.addEventListener('change', () => {
 });
 
 async function init() {
-  const datasets = await fetch('/api/datasets').then(r => r.json());
-  datasets.forEach(ds => {
-    const opt = document.createElement('option');
-    opt.value = ds.name;
-    opt.textContent = ds.label;
-    els.datasetSelect.appendChild(opt);
-  });
+  try {
+    const datasets = await fetch('/api/datasets').then(r => r.json());
+    datasets.forEach(ds => {
+      const opt = document.createElement('option');
+      opt.value = ds.name;
+      opt.textContent = ds.label;
+      els.datasetSelect.appendChild(opt);
+    });
 
-  els.nnSlider.value = N_NEIGHBORS_STEPS.indexOf(state.nNeighbors);
-  els.nnValue.textContent = state.nNeighbors;
-  els.mdSlider.value = MIN_DIST_STEPS.indexOf(state.minDist);
-  els.mdValue.textContent = state.minDist;
+    els.nnSlider.value = N_NEIGHBORS_STEPS.indexOf(state.nNeighbors);
+    els.nnValue.textContent = state.nNeighbors;
+    els.mdSlider.value = MIN_DIST_STEPS.indexOf(state.minDist);
+    els.mdValue.textContent = state.minDist;
 
-  if (datasets.length > 0) {
-    state.dataset = datasets[0].name;
-    fetchAndRender();
+    if (datasets.length > 0) {
+      state.dataset = datasets[0].name;
+      fetchAndRender();
+    }
+  } catch (e) {
+    console.error('Failed to load datasets:', e);
+    els.loading.textContent = 'Failed to connect to server.';
+    els.loading.style.display = 'block';
   }
 }
 
