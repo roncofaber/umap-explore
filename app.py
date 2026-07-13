@@ -8,8 +8,8 @@ from fastapi.responses import FileResponse
 from typing import Literal
 
 import colorcet as cc
-from datasets import DATASETS
-from precompute import make_key
+from datasets.meta import DATASETS_META
+from utils import make_key
 
 def _label_colors(label_names: list | None) -> list | None:
     if not label_names:
@@ -30,6 +30,11 @@ def _load_json(dataset_name: str) -> dict:
     return json.loads(path.read_text())
 
 
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+
 @app.get("/")
 def index():
     return FileResponse(_STATIC_DIR / "index.html")
@@ -38,7 +43,7 @@ def index():
 @app.get("/api/datasets")
 def list_datasets():
     result = []
-    for name, meta in DATASETS.items():
+    for name, meta in DATASETS_META.items():
         path = EMBEDDINGS_DIR / f"{name}.json"
         if not path.exists():
             continue
@@ -69,7 +74,7 @@ def get_embedding(
 ):
     if not re.match(r'^[a-zA-Z0-9_]+$', dataset_name):
         raise HTTPException(status_code=400, detail="Invalid dataset name")
-    if dataset_name not in DATASETS:
+    if dataset_name not in DATASETS_META:
         raise HTTPException(status_code=404, detail=f"Unknown dataset '{dataset_name}'")
     data = _load_json(dataset_name)
     key = f"pca_{n_components}_{scale}" if method == 'pca' else make_key(n_neighbors, min_dist, n_components, metric, scale)

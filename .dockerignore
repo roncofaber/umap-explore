@@ -1,0 +1,16 @@
+**/__pycache__
+*.pyc
+*.py[cod]
+.git
+.gitignore
+.superpowers/
+docs/
+tests/
+*.md
+datasets/iris.py
+datasets/mnist.py
+datasets/digits.py
+datasets/swiss_roll.py
+datasets/breast_cancer.py
+precompute.py
+requirements.txt

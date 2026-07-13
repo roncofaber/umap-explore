@@ -9,6 +9,7 @@ from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
 from datasets import DATASETS
+from utils import make_key  # noqa: F401 — re-exported for test compat
 
 N_NEIGHBORS = [5, 10, 15, 20, 30, 50, 100]
 MIN_DIST = [0.0, 0.05, 0.1, 0.25, 0.5, 1.0]
@@ -16,9 +17,6 @@ N_COMPONENTS = [2]
 METRICS = ['euclidean', 'cosine', 'manhattan', 'correlation']
 SCALE = ['scaled', 'raw']
 
-
-def make_key(n_neighbors, min_dist, n_components, metric, scale):
-    return f"{n_neighbors}_{min_dist}_{n_components}_{metric}_{scale}"
 
 
 def compute_embedding(X, n_neighbors, min_dist, n_components, metric):
