@@ -24,7 +24,8 @@ const els = {
   loading:       document.getElementById('loading'),
 };
 
-// Compute axis range with 6% padding, safe for large arrays
+// ── Axis range ────────────────────────────────────────────────────────────────
+
 function axisRange(arr) {
   let mn = Infinity, mx = -Infinity;
   for (let i = 0; i < arr.length; i++) {
@@ -34,6 +35,8 @@ function axisRange(arr) {
   const pad = (mx - mn) * 0.06;
   return [mn - pad, mx + pad];
 }
+
+// ── Fetch ─────────────────────────────────────────────────────────────────────
 
 async function fetchEmbedding() {
   const params = new URLSearchParams({
@@ -46,6 +49,8 @@ async function fetchEmbedding() {
   if (!resp.ok) throw new Error(`API error ${resp.status}`);
   return resp.json();
 }
+
+// ── Plotly trace / layout ─────────────────────────────────────────────────────
 
 function makeTrace(emb) {
   const isContinuous = emb.label_names === null;
@@ -68,7 +73,7 @@ function makeTrace(emb) {
   }
 
   return {
-    type: 'scatter', mode: 'markers',
+    type: 'scattergl', mode: 'markers',
     x: emb.x, y: emb.y,
     text: hoverText,
     hovertemplate: '%{text}<extra></extra>',
@@ -117,54 +122,73 @@ function makeLayout(emb) {
   };
 }
 
-let snapTimer = null;
+// ── Custom animation ──────────────────────────────────────────────────────────
+// Drive both marker positions and axis ranges with one rAF loop so the
+// bounds always contain the data and everything moves together.
+
+let currentEmb = null;  // the embedding currently visible on screen
+let animFrame  = null;
+
+function cubicInOut(t) {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+
+function interpolateEmb(from, to, e) {
+  const n = to.x.length;
+  const x = new Array(n);
+  const y = new Array(n);
+  for (let i = 0; i < n; i++) {
+    x[i] = from.x[i] + (to.x[i] - from.x[i]) * e;
+    y[i] = from.y[i] + (to.y[i] - from.y[i]) * e;
+  }
+  const out = { ...to, x, y };
+  if (to.z && from.z) {
+    const z = new Array(n);
+    for (let i = 0; i < n; i++) z[i] = from.z[i] + (to.z[i] - from.z[i]) * e;
+    out.z = z;
+  }
+  return out;
+}
 
 function renderPlot(emb) {
   if (state.nComponents === 3 && !emb.z) {
     console.error('3D requested but embedding has no z data');
     return;
   }
-  const trace = makeTrace(emb);
-  const layout = makeLayout(emb);
+
   const dimensionChanged = state.prevNComponents !== null
     && state.prevNComponents !== state.nComponents;
   state.prevNComponents = state.nComponents;
 
-  if (state.isFirstRender || dimensionChanged) {
-    Plotly.react(els.plot, [trace], layout, { responsive: true });
+  // Full re-render: first load, dimension switch, or dataset change (different n)
+  if (state.isFirstRender || dimensionChanged
+      || !currentEmb || currentEmb.x.length !== emb.x.length) {
+    if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
+    Plotly.react(els.plot, [makeTrace(emb)], makeLayout(emb), { responsive: true });
     state.isFirstRender = false;
+    currentEmb = emb;
     return;
   }
 
-  const frameData = { x: emb.x, y: emb.y, 'marker.color': trace.marker.color };
-  if (state.nComponents === 3) frameData.z = emb.z;
+  // Animated transition: start from wherever the markers currently are so
+  // interrupted animations don't jump.
+  const from  = currentEmb;
+  const start = performance.now();
+  const DURATION = 400;
 
-  if (state.nComponents === 2) {
-    // Plotly applies frame layout at the END of animation, not the start.
-    // Pre-expand axes to the union of old+new ranges so markers never leave
-    // the visible area during the transition, then snap to the tight range.
-    const newX = axisRange(emb.x);
-    const newY = axisRange(emb.y);
-    const cur = els.plot.layout;
-    const oldX = (cur.xaxis && cur.xaxis.range) || newX;
-    const oldY = (cur.yaxis && cur.yaxis.range) || newY;
-    Plotly.relayout(els.plot, {
-      'xaxis.range': [Math.min(oldX[0], newX[0]), Math.max(oldX[1], newX[1])],
-      'yaxis.range': [Math.min(oldY[0], newY[0]), Math.max(oldY[1], newY[1])],
-    });
+  if (animFrame) cancelAnimationFrame(animFrame);
 
-    clearTimeout(snapTimer);
-    snapTimer = setTimeout(() => {
-      Plotly.relayout(els.plot, { 'xaxis.range': newX, 'yaxis.range': newY });
-    }, 430);
-  }
-
-  Plotly.animate(
-    els.plot,
-    { data: [frameData], traces: [0] },
-    { transition: { duration: 400, easing: 'cubic-in-out' }, frame: { duration: 400 } },
-  );
+  (function tick() {
+    const t     = Math.min((performance.now() - start) / DURATION, 1);
+    const interp = interpolateEmb(from, emb, cubicInOut(t));
+    currentEmb  = interp;
+    Plotly.react(els.plot, [makeTrace(interp)], makeLayout(interp));
+    animFrame = (t < 1) ? requestAnimationFrame(tick) : null;
+    if (t >= 1) currentEmb = emb;
+  })();
 }
+
+// ── Fetch + render ────────────────────────────────────────────────────────────
 
 async function fetchAndRender() {
   els.loading.style.display = 'block';
@@ -178,13 +202,14 @@ async function fetchAndRender() {
   }
 }
 
-// Debounce: update the value label immediately, but wait 300 ms of
-// inactivity before fetching so rapid slider drags don't queue up requests
+// Sliders update the label immediately; fetch fires after 300 ms of inactivity
 let renderTimer = null;
 function scheduleRender() {
   clearTimeout(renderTimer);
   renderTimer = setTimeout(fetchAndRender, 300);
 }
+
+// ── Event listeners ───────────────────────────────────────────────────────────
 
 els.nnSlider.addEventListener('input', () => {
   state.nNeighbors = N_NEIGHBORS_STEPS[parseInt(els.nnSlider.value)];
@@ -224,6 +249,8 @@ els.datasetSelect.addEventListener('change', () => {
   state.isFirstRender = true;
   fetchAndRender();
 });
+
+// ── Init ──────────────────────────────────────────────────────────────────────
 
 async function init() {
   try {
