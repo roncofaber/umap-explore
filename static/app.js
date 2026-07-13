@@ -1,1 +1,183 @@
-// placeholder
+const N_NEIGHBORS_STEPS = [5, 10, 15, 20, 30, 50];
+const MIN_DIST_STEPS = [0.0, 0.05, 0.1, 0.25, 0.5, 1.0];
+
+const state = {
+  dataset: null,
+  nNeighbors: 15,
+  minDist: 0.1,
+  nComponents: 2,
+  metric: 'euclidean',
+  isFirstRender: true,
+  prevNComponents: null,
+};
+
+const els = {
+  datasetSelect: document.getElementById('dataset-select'),
+  nnSlider:      document.getElementById('n-neighbors-slider'),
+  nnValue:       document.getElementById('n-neighbors-value'),
+  mdSlider:      document.getElementById('min-dist-slider'),
+  mdValue:       document.getElementById('min-dist-value'),
+  btn2d:         document.getElementById('n-components-2d'),
+  btn3d:         document.getElementById('n-components-3d'),
+  metricSelect:  document.getElementById('metric-select'),
+  plot:          document.getElementById('plot'),
+  loading:       document.getElementById('loading'),
+};
+
+async function fetchEmbedding() {
+  const params = new URLSearchParams({
+    n_neighbors:  state.nNeighbors,
+    min_dist:     state.minDist,
+    n_components: state.nComponents,
+    metric:       state.metric,
+  });
+  const resp = await fetch(`/api/embeddings/${state.dataset}?${params}`);
+  if (!resp.ok) throw new Error(`API error ${resp.status}`);
+  return resp.json();
+}
+
+function makeTrace(emb) {
+  const isContinuous = emb.label_names === null;
+  const markerColor = isContinuous
+    ? emb.labels
+    : emb.labels.map(l => l / Math.max(emb.label_names.length - 1, 1));
+  const colorscale = isContinuous ? 'Viridis' : 'Turbo';
+  const hoverText = isContinuous
+    ? emb.labels.map(v => `value: ${v.toFixed(2)}`)
+    : emb.labels.map(l => emb.label_names[l]);
+
+  if (state.nComponents === 3) {
+    return {
+      type: 'scatter3d', mode: 'markers',
+      x: emb.x, y: emb.y, z: emb.z,
+      text: hoverText,
+      hovertemplate: '%{text}<extra></extra>',
+      marker: { size: 3, color: markerColor, colorscale, showscale: isContinuous, opacity: 0.8 },
+    };
+  }
+
+  return {
+    type: 'scatter', mode: 'markers',
+    x: emb.x, y: emb.y,
+    text: hoverText,
+    hovertemplate: '%{text}<extra></extra>',
+    marker: { size: 5, color: markerColor, colorscale, showscale: isContinuous, opacity: 0.8 },
+  };
+}
+
+function makeLayout() {
+  const base = {
+    margin: { t: 20, r: 20, b: 20, l: 20 },
+    paper_bgcolor: '#f8f9fa',
+    plot_bgcolor: '#f8f9fa',
+    showlegend: false,
+    uirevision: state.nComponents,
+  };
+  if (state.nComponents === 3) {
+    return {
+      ...base,
+      scene: {
+        xaxis: { visible: false },
+        yaxis: { visible: false },
+        zaxis: { visible: false },
+      },
+    };
+  }
+  return { ...base, xaxis: { visible: false }, yaxis: { visible: false } };
+}
+
+function renderPlot(emb) {
+  const trace = makeTrace(emb);
+  const layout = makeLayout();
+  const dimensionChanged = state.prevNComponents !== null
+    && state.prevNComponents !== state.nComponents;
+  state.prevNComponents = state.nComponents;
+
+  if (state.isFirstRender || dimensionChanged) {
+    Plotly.react(els.plot, [trace], layout, { responsive: true });
+    state.isFirstRender = false;
+    return;
+  }
+
+  const frameData = { x: emb.x, y: emb.y, 'marker.color': trace.marker.color };
+  if (state.nComponents === 3) frameData.z = emb.z;
+
+  Plotly.animate(
+    els.plot,
+    { data: [frameData], traces: [0] },
+    { transition: { duration: 400, easing: 'cubic-in-out' }, frame: { duration: 400 } },
+  );
+}
+
+async function fetchAndRender() {
+  els.loading.style.display = 'block';
+  try {
+    const emb = await fetchEmbedding();
+    renderPlot(emb);
+  } catch (e) {
+    console.error('Failed to load embedding:', e);
+  } finally {
+    els.loading.style.display = 'none';
+  }
+}
+
+els.nnSlider.addEventListener('input', () => {
+  state.nNeighbors = N_NEIGHBORS_STEPS[parseInt(els.nnSlider.value)];
+  els.nnValue.textContent = state.nNeighbors;
+  fetchAndRender();
+});
+
+els.mdSlider.addEventListener('input', () => {
+  state.minDist = MIN_DIST_STEPS[parseInt(els.mdSlider.value)];
+  els.mdValue.textContent = state.minDist;
+  fetchAndRender();
+});
+
+els.btn2d.addEventListener('click', () => {
+  if (state.nComponents === 2) return;
+  state.nComponents = 2;
+  els.btn2d.classList.add('active');
+  els.btn3d.classList.remove('active');
+  fetchAndRender();
+});
+
+els.btn3d.addEventListener('click', () => {
+  if (state.nComponents === 3) return;
+  state.nComponents = 3;
+  els.btn3d.classList.add('active');
+  els.btn2d.classList.remove('active');
+  fetchAndRender();
+});
+
+els.metricSelect.addEventListener('change', () => {
+  state.metric = els.metricSelect.value;
+  fetchAndRender();
+});
+
+els.datasetSelect.addEventListener('change', () => {
+  state.dataset = els.datasetSelect.value;
+  state.isFirstRender = true;
+  fetchAndRender();
+});
+
+async function init() {
+  const datasets = await fetch('/api/datasets').then(r => r.json());
+  datasets.forEach(ds => {
+    const opt = document.createElement('option');
+    opt.value = ds.name;
+    opt.textContent = ds.label;
+    els.datasetSelect.appendChild(opt);
+  });
+
+  els.nnSlider.value = N_NEIGHBORS_STEPS.indexOf(state.nNeighbors);
+  els.nnValue.textContent = state.nNeighbors;
+  els.mdSlider.value = MIN_DIST_STEPS.indexOf(state.minDist);
+  els.mdValue.textContent = state.minDist;
+
+  if (datasets.length > 0) {
+    state.dataset = datasets[0].name;
+    fetchAndRender();
+  }
+}
+
+init();
