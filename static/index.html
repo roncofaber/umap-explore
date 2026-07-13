@@ -1,4 +1,72 @@
 <!DOCTYPE html>
-<html><head><title>UMAP Explorer</title></head>
-<body><h1>UMAP Explorer — coming soon</h1></body>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UMAP Explorer</title>
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header>
+    <h1>UMAP Explorer</h1>
+  </header>
+
+  <main>
+    <aside id="controls">
+      <details id="umap-explainer">
+        <summary>What is UMAP?</summary>
+        <p>UMAP (Uniform Manifold Approximation and Projection) finds a low-dimensional map of high-dimensional data that preserves its structure. It works by learning which points are neighbors in the original space, then arranging them so neighbors stay close in the map. Use the controls below to see how each parameter shapes the result.</p>
+      </details>
+
+      <div class="control-group">
+        <label for="dataset-select">Dataset</label>
+        <select id="dataset-select"></select>
+      </div>
+
+      <div class="control-group">
+        <label for="n-neighbors-slider">
+          n_neighbors: <span id="n-neighbors-value">15</span>
+        </label>
+        <input type="range" id="n-neighbors-slider" min="0" max="5" step="1" value="2">
+        <p class="param-description">How many nearby points UMAP considers when learning data structure. Low values capture fine local detail; high values reveal the global shape.</p>
+      </div>
+
+      <div class="control-group">
+        <label for="min-dist-slider">
+          min_dist: <span id="min-dist-value">0.1</span>
+        </label>
+        <input type="range" id="min-dist-slider" min="0" max="5" step="1" value="2">
+        <p class="param-description">Minimum distance between points in the layout. Lower values pack clusters tightly; higher values spread them out more evenly.</p>
+      </div>
+
+      <div class="control-group">
+        <label>n_components</label>
+        <div class="toggle-group">
+          <button id="n-components-2d" class="toggle active">2D</button>
+          <button id="n-components-3d" class="toggle">3D</button>
+        </div>
+        <p class="param-description">Number of output dimensions. 2D is easier to read; 3D preserves slightly more structure and is rotatable.</p>
+      </div>
+
+      <div class="control-group">
+        <label for="metric-select">metric</label>
+        <select id="metric-select">
+          <option value="euclidean">euclidean</option>
+          <option value="cosine">cosine</option>
+          <option value="manhattan">manhattan</option>
+          <option value="correlation">correlation</option>
+        </select>
+        <p class="param-description">How distances between points are measured in the original space. Different metrics can reveal different structure in your data.</p>
+      </div>
+    </aside>
+
+    <section id="plot-container">
+      <div id="loading">Loading...</div>
+      <div id="plot"></div>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
 </html>
