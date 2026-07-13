@@ -68,12 +68,18 @@ const datasetInfo = {};
 
 // ── Sidebar collapse ──────────────────────────────────────────────────────────
 
+function updateToggleLabel() {
+  els.sidebarToggle.textContent = els.sidebar.classList.contains('collapsed') ? '›' : '‹';
+}
+
 els.sidebarToggle.addEventListener('click', () => {
   const collapsed = els.sidebar.classList.toggle('collapsed');
   els.sidebarToggle.classList.toggle('collapsed', collapsed);
-  // Re-trigger Plotly resize so the plot fills the new space
+  updateToggleLabel();
   requestAnimationFrame(() => Plotly.relayout(els.plot, {}));
 });
+
+updateToggleLabel();
 
 // ── Slider tick positioning ───────────────────────────────────────────────────
 // CSS flex/grid can't perfectly center variable-width labels at thumb positions,

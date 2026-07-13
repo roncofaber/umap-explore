@@ -183,9 +183,7 @@ main { position: relative; }
   left: 0;
 }
 
-.sidebar-toggle.collapsed::after { content: '›'; }
-.sidebar-toggle:not(.collapsed)::after { content: '‹'; }
-.sidebar-toggle { font-size: 0; }  /* hide the HTML text, use ::after */
+.sidebar-toggle { font-size: 0.85rem; }
 
 /* ── Dataset field ───────────────────────── */
 .field-label {
