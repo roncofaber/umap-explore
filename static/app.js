@@ -1,4 +1,4 @@
-const N_NEIGHBORS_STEPS = [5, 10, 15, 20, 30, 50];
+const N_NEIGHBORS_STEPS = [5, 10, 15, 20, 30, 50, 100];
 const MIN_DIST_STEPS = [0.0, 0.05, 0.1, 0.25, 0.5, 1.0];
 
 const state = {
@@ -6,6 +6,7 @@ const state = {
   nNeighbors: 15,
   minDist: 0.1,
   metric: 'euclidean',
+  scale: 'scaled',
   isFirstRender: true,
 };
 
@@ -16,7 +17,10 @@ const els = {
   mdSlider:      document.getElementById('min-dist-slider'),
   mdValue:       document.getElementById('min-dist-value'),
   metricSelect:  document.getElementById('metric-select'),
+  scaleOn:       document.getElementById('scale-on'),
+  scaleOff:      document.getElementById('scale-off'),
   plot:          document.getElementById('plot'),
+  legend:        document.getElementById('legend'),
   loading:       document.getElementById('loading'),
 };
 
@@ -40,6 +44,7 @@ async function fetchEmbedding() {
     min_dist:     state.minDist,
     n_components: 2,
     metric:       state.metric,
+    scale:        state.scale,
   });
   const resp = await fetch(`/api/embeddings/${state.dataset}?${params}`);
   if (!resp.ok) throw new Error(`API error ${resp.status}`);
@@ -49,6 +54,19 @@ async function fetchEmbedding() {
 // ── Dataset metadata (label colors keyed by dataset name) ────────────────────
 
 const datasetInfo = {};
+
+// ── Legend ────────────────────────────────────────────────────────────────────
+
+function updateLegend(emb) {
+  if (emb.label_names === null) { els.legend.innerHTML = ''; return; }
+  const palette = datasetInfo[state.dataset]?.label_colors || [];
+  els.legend.innerHTML = emb.label_names.map((name, i) =>
+    `<div class="legend-item">
+       <span class="legend-dot" style="background:${palette[i] || '#888'}"></span>
+       <span class="legend-label">${name}</span>
+     </div>`
+  ).join('');
+}
 
 // ── Plotly trace / layout ─────────────────────────────────────────────────────
 
@@ -81,7 +99,7 @@ function makeTrace(emb) {
   };
 }
 
-const AXIS_LABEL_FONT = { family: "'JetBrains Mono', monospace", size: 10, color: '#515978' };
+const AXIS_LABEL_FONT = { family: "'JetBrains Mono', monospace", size: 12, color: '#515978' };
 const AXIS_BOX = {
   showline: true, linecolor: '#000', linewidth: 1.5, mirror: true,
   showgrid: false, zeroline: false, showticklabels: false, ticks: '',
@@ -158,6 +176,7 @@ async function fetchAndRender() {
   try {
     const emb = await fetchEmbedding();
     renderPlot(emb);
+    updateLegend(emb);
   } catch (e) {
     console.error('Failed to load embedding:', e);
   } finally {
@@ -187,6 +206,24 @@ els.mdSlider.addEventListener('input', () => {
 
 els.metricSelect.addEventListener('change', () => {
   state.metric = els.metricSelect.value;
+  fetchAndRender();
+});
+
+els.scaleOn.addEventListener('click', () => {
+  if (state.scale === 'scaled') return;
+  state.scale = 'scaled';
+  els.scaleOn.classList.add('active');
+  els.scaleOff.classList.remove('active');
+  state.isFirstRender = true;
+  fetchAndRender();
+});
+
+els.scaleOff.addEventListener('click', () => {
+  if (state.scale === 'raw') return;
+  state.scale = 'raw';
+  els.scaleOff.classList.add('active');
+  els.scaleOn.classList.remove('active');
+  state.isFirstRender = true;
   fetchAndRender();
 });
 

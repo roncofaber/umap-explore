@@ -7,7 +7,7 @@ FIXTURE_EMBEDDING = {
         "n_points": 3,
         "label_names": ["setosa", "versicolor", "virginica"],
     },
-    "15_0.1_2_euclidean": {
+    "15_0.1_2_euclidean_scaled": {
         "x": [1.0, 2.0, 3.0],
         "y": [0.5, 1.5, 2.5],
         "z": None,
@@ -43,7 +43,7 @@ def test_list_datasets(client):
 
 def test_get_embedding(client):
     resp = client.get(
-        "/api/embeddings/iris?n_neighbors=15&min_dist=0.1&n_components=2&metric=euclidean"
+        "/api/embeddings/iris?n_neighbors=15&min_dist=0.1&n_components=2&metric=euclidean&scale=scaled"
     )
     assert resp.status_code == 200
     data = resp.json()
@@ -55,13 +55,13 @@ def test_get_embedding(client):
 
 def test_embedding_key_not_found(client):
     resp = client.get(
-        "/api/embeddings/iris?n_neighbors=99&min_dist=0.1&n_components=2&metric=euclidean"
+        "/api/embeddings/iris?n_neighbors=99&min_dist=0.1&n_components=2&metric=euclidean&scale=scaled"
     )
     assert resp.status_code == 404
 
 
 def test_dataset_not_found(client):
     resp = client.get(
-        "/api/embeddings/nonexistent?n_neighbors=15&min_dist=0.1&n_components=2&metric=euclidean"
+        "/api/embeddings/nonexistent?n_neighbors=15&min_dist=0.1&n_components=2&metric=euclidean&scale=scaled"
     )
     assert resp.status_code == 404

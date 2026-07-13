@@ -9,14 +9,15 @@ from sklearn.preprocessing import StandardScaler
 
 from datasets import DATASETS
 
-N_NEIGHBORS = [5, 10, 15, 20, 30, 50]
+N_NEIGHBORS = [5, 10, 15, 20, 30, 50, 100]
 MIN_DIST = [0.0, 0.05, 0.1, 0.25, 0.5, 1.0]
 N_COMPONENTS = [2]
 METRICS = ['euclidean', 'cosine', 'manhattan', 'correlation']
+SCALE = ['scaled', 'raw']
 
 
-def make_key(n_neighbors, min_dist, n_components, metric):
-    return f"{n_neighbors}_{min_dist}_{n_components}_{metric}"
+def make_key(n_neighbors, min_dist, n_components, metric, scale):
+    return f"{n_neighbors}_{min_dist}_{n_components}_{metric}_{scale}"
 
 
 def compute_embedding(X, n_neighbors, min_dist, n_components, metric):
@@ -30,10 +31,12 @@ def compute_embedding(X, n_neighbors, min_dist, n_components, metric):
 
 
 def precompute_dataset(dataset_name, output_dir, n_neighbors_list, min_dist_list,
-                       n_components_list, metrics_list):
+                       n_components_list, metrics_list, scales_list):
     dataset = DATASETS[dataset_name]
     data = dataset['loader']()
-    X = StandardScaler().fit_transform(data['X'])
+    X_raw = data['X'].astype(float)
+    X_scaled = StandardScaler().fit_transform(X_raw)
+    X_by_scale = {'scaled': X_scaled, 'raw': X_raw}
 
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -45,16 +48,16 @@ def precompute_dataset(dataset_name, output_dir, n_neighbors_list, min_dist_list
         'label_names': data['label_names'],
     }
 
-    combos = list(itertools.product(n_neighbors_list, min_dist_list, n_components_list, metrics_list))
+    combos = list(itertools.product(n_neighbors_list, min_dist_list, n_components_list, metrics_list, scales_list))
     total = len(combos)
 
-    for i, (nn, md, nc, metric) in enumerate(combos):
-        key = make_key(nn, md, nc, metric)
+    for i, (nn, md, nc, metric, scale) in enumerate(combos):
+        key = make_key(nn, md, nc, metric, scale)
         if key in results:
             print(f"[{i+1}/{total}] {key} — skipping (cached)")
             continue
         print(f"[{i+1}/{total}] {key} — computing...")
-        embedding = compute_embedding(X, nn, md, nc, metric)
+        embedding = compute_embedding(X_by_scale[scale], nn, md, nc, metric)
         results[key] = {
             'x': embedding[:, 0].tolist(),
             'y': embedding[:, 1].tolist(),
@@ -75,6 +78,7 @@ def main():
     parser.add_argument('--min-dist', type=float, nargs='+', default=MIN_DIST)
     parser.add_argument('--n-components', type=int, nargs='+', default=N_COMPONENTS)
     parser.add_argument('--metric', nargs='+', default=METRICS)
+    parser.add_argument('--scale', nargs='+', default=SCALE, choices=SCALE)
     args = parser.parse_args()
 
     targets = [args.dataset] if args.dataset else list(DATASETS.keys())
@@ -82,7 +86,7 @@ def main():
         print(f"\n=== Precomputing {name} ===")
         precompute_dataset(
             name, args.output_dir,
-            args.n_neighbors, args.min_dist, args.n_components, args.metric,
+            args.n_neighbors, args.min_dist, args.n_components, args.metric, args.scale,
         )
 
 

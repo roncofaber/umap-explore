@@ -62,13 +62,14 @@ def get_embedding(
     min_dist: float = Query(..., ge=0.0, le=2.0),
     n_components: int = Query(2, ge=2, le=2),
     metric: Literal['euclidean', 'cosine', 'manhattan', 'correlation'] = Query(...),
+    scale: Literal['scaled', 'raw'] = Query('scaled'),
 ):
     if not re.match(r'^[a-zA-Z0-9_]+$', dataset_name):
         raise HTTPException(status_code=400, detail="Invalid dataset name")
     if dataset_name not in DATASETS:
         raise HTTPException(status_code=404, detail=f"Unknown dataset '{dataset_name}'")
     data = _load_json(dataset_name)
-    key = make_key(n_neighbors, min_dist, n_components, metric)
+    key = make_key(n_neighbors, min_dist, n_components, metric, scale)
     if key not in data:
         raise HTTPException(status_code=404, detail=f"No embedding for key '{key}'")
     return data[key]
