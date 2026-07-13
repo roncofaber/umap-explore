@@ -44,6 +44,19 @@
         </div>
       </div>
 
+      <div class="params-divider">Preprocessing</div>
+
+      <div class="control-group">
+        <div class="param-block">
+          <span class="pname">StandardScaler</span><span class="peq"> = </span>
+          <div class="toggle-group">
+            <button id="scale-on" class="toggle active">True</button>
+            <button id="scale-off" class="toggle">False</button>
+          </div>
+        </div>
+        <p class="param-description">Normalize each feature to zero mean and unit variance before embedding. Disable to see the effect of raw feature scales on the projection.</p>
+      </div>
+
       <div id="umap-params">
         <div class="params-divider">Parameters</div>
 
@@ -84,19 +97,6 @@
           </div>
           <p class="param-description">How distances between points are measured in the original space. Different metrics can reveal different structure in your data.</p>
         </div>
-      </div>
-
-      <div class="params-divider">Preprocessing</div>
-
-      <div class="control-group">
-        <div class="param-block">
-          <span class="pname">StandardScaler</span><span class="peq"> = </span>
-          <div class="toggle-group">
-            <button id="scale-on" class="toggle active">True</button>
-            <button id="scale-off" class="toggle">False</button>
-          </div>
-        </div>
-        <p class="param-description">Normalize each feature to zero mean and unit variance before embedding. Disable to see the effect of raw feature scales on the projection.</p>
       </div>
     </aside>
 

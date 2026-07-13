@@ -177,7 +177,7 @@ function renderPlot(emb) {
 
   const from  = currentEmb;
   const start = performance.now();
-  const DURATION = 400;
+  const DURATION = 600;
 
   if (animFrame) cancelAnimationFrame(animFrame);
 
