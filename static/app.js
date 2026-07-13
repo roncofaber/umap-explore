@@ -21,6 +21,7 @@ const els = {
   methodUmap:    document.getElementById('method-umap'),
   methodPca:     document.getElementById('method-pca'),
   umapParams:    document.getElementById('umap-params'),
+  paramStatus:   document.getElementById('param-status'),
   datasetInfo:   document.getElementById('dataset-info'),
   datasetStats:  document.getElementById('dataset-stats'),
   datasetDesc:   document.getElementById('dataset-desc'),
@@ -62,6 +63,19 @@ async function fetchEmbedding() {
 // ── Dataset metadata (label colors keyed by dataset name) ────────────────────
 
 const datasetInfo = {};
+
+// ── Param status bar ─────────────────────────────────────────────────────────
+
+function updateParamStatus() {
+  if (!els.paramStatus) return;
+  const scaleLabel = state.scale === 'scaled' ? 'scaled' : 'raw';
+  if (state.method === 'pca') {
+    els.paramStatus.textContent = `PCA  ·  ${scaleLabel}`;
+  } else {
+    els.paramStatus.textContent =
+      `n_neighbors=${state.nNeighbors}  ·  min_dist=${state.minDist}  ·  metric=${state.metric}  ·  ${scaleLabel}`;
+  }
+}
 
 // ── Dataset info card ─────────────────────────────────────────────────────────
 
@@ -121,7 +135,7 @@ function makeTrace(emb) {
   };
 }
 
-const AXIS_LABEL_FONT = { family: "'JetBrains Mono', monospace", size: 12, color: '#515978' };
+const AXIS_LABEL_FONT = { family: "'JetBrains Mono', monospace", size: 14, color: '#515978' };
 const AXIS_BOX = {
   showline: true, linecolor: '#000', linewidth: 1.5, mirror: true,
   showgrid: false, zeroline: false, showticklabels: false, ticks: '',
@@ -197,6 +211,7 @@ function renderPlot(emb) {
 
 async function fetchAndRender() {
   els.loading.style.display = 'block';
+  updateParamStatus();
   try {
     const emb = await fetchEmbedding();
     renderPlot(emb);
