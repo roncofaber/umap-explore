@@ -5,6 +5,7 @@ from pathlib import Path
 
 import numpy as np
 import umap
+from sklearn.preprocessing import StandardScaler
 
 from datasets import DATASETS
 
@@ -33,7 +34,7 @@ def precompute_dataset(dataset_name, output_dir, n_neighbors_list, min_dist_list
                        n_components_list, metrics_list):
     dataset = DATASETS[dataset_name]
     data = dataset['loader']()
-    X = data['X']
+    X = StandardScaler().fit_transform(data['X'])
 
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
