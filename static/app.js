@@ -272,6 +272,94 @@ els.datasetSelect.addEventListener('change', () => {
   fetchAndRender();
 });
 
+// ── Show code modal ───────────────────────────────────────────────────────────
+
+const DATASET_CODE = {
+  iris: {
+    imports: 'from sklearn.datasets import load_iris',
+    load: 'data = load_iris()\nX = data.data',
+  },
+  digits: {
+    imports: 'from sklearn.datasets import load_digits',
+    load: 'data = load_digits()\nX = data.data',
+  },
+  swiss_roll: {
+    imports: 'from sklearn.datasets import make_swiss_roll',
+    load: 'X, _ = make_swiss_roll(n_samples=2000, random_state=42)',
+  },
+  breast_cancer: {
+    imports: 'from sklearn.datasets import load_breast_cancer',
+    load: 'data = load_breast_cancer()\nX = data.data',
+  },
+};
+
+function generateCode() {
+  const ds = DATASET_CODE[state.dataset];
+  if (!ds) return '';
+  const lines = [];
+
+  if (state.method === 'umap') lines.push('import umap');
+  if (state.method === 'pca')  lines.push('from sklearn.decomposition import PCA');
+  lines.push(ds.imports);
+  if (state.scale === 'scaled') lines.push('from sklearn.preprocessing import StandardScaler');
+  lines.push('');
+
+  lines.push('# Load data');
+  lines.push(ds.load);
+
+  if (state.scale === 'scaled') {
+    lines.push('');
+    lines.push('# Normalize features');
+    lines.push('X = StandardScaler().fit_transform(X)');
+  }
+
+  lines.push('');
+  if (state.method === 'umap') {
+    lines.push('# Fit UMAP');
+    lines.push('reducer = umap.UMAP(');
+    lines.push(`    n_neighbors=${state.nNeighbors},`);
+    lines.push(`    min_dist=${state.minDist},`);
+    lines.push(`    n_components=2,`);
+    lines.push(`    metric='${state.metric}',`);
+    lines.push(')');
+  } else {
+    lines.push('# Fit PCA');
+    lines.push('reducer = PCA(n_components=2)');
+  }
+  lines.push('embedding = reducer.fit_transform(X)');
+
+  return lines.join('\n');
+}
+
+const codeModal    = document.getElementById('code-modal');
+const codeBlock    = document.getElementById('code-block');
+const copyCodeBtn  = document.getElementById('copy-code-btn');
+const closeCodeBtn = document.getElementById('close-code-btn');
+const showCodeBtn  = document.getElementById('show-code-btn');
+
+showCodeBtn.addEventListener('click', () => {
+  codeBlock.textContent = generateCode();
+  codeModal.hidden = false;
+});
+
+closeCodeBtn.addEventListener('click', () => { codeModal.hidden = true; });
+
+codeModal.addEventListener('click', e => {
+  if (e.target === codeModal) codeModal.hidden = true;
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') codeModal.hidden = true;
+});
+
+copyCodeBtn.addEventListener('click', () => {
+  navigator.clipboard.writeText(codeBlock.textContent).then(() => {
+    const orig = copyCodeBtn.textContent;
+    copyCodeBtn.textContent = 'Copied!';
+    setTimeout(() => { copyCodeBtn.textContent = orig; }, 1500);
+  });
+});
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 
 async function init() {

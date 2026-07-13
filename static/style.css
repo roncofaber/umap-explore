@@ -359,6 +359,95 @@ input[type="range"]::-moz-range-thumb {
   line-height: 1.5;
 }
 
+/* ── Show code button ────────────────────── */
+.show-code-btn {
+  width: 100%;
+  padding: 0.5rem;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-3);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--font-sm);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  margin-top: 0.25rem;
+}
+
+.show-code-btn:hover {
+  background: var(--code-bg);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ── Code modal ──────────────────────────── */
+.code-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(28, 32, 51, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  backdrop-filter: blur(2px);
+}
+
+.code-modal[hidden] { display: none; }
+
+.code-modal-box {
+  background: #1c2033;
+  border-radius: 10px;
+  width: min(640px, 92vw);
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.4);
+}
+
+.code-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.625rem 1rem;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.code-modal-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--font-xs);
+  color: rgba(255,255,255,0.35);
+  letter-spacing: 0.04em;
+}
+
+.code-modal-actions { display: flex; gap: 0.5rem; }
+
+.code-action-btn {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 4px;
+  color: rgba(255,255,255,0.55);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--font-xs);
+  padding: 0.2rem 0.6rem;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.code-action-btn:hover {
+  background: rgba(255,255,255,0.14);
+  color: #fff;
+}
+
+.code-block {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--font-sm);
+  line-height: 1.7;
+  color: #e2e6f0;
+  padding: 1.25rem 1.25rem 1.5rem;
+  margin: 0;
+  overflow-x: auto;
+  white-space: pre;
+  tab-size: 4;
+}
+
 /* ── Plot area ───────────────────────────── */
 #plot-container {
   flex: 1;

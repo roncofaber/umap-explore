@@ -98,7 +98,21 @@
           <p class="param-description">How distances between points are measured in the original space. Different metrics can reveal different structure in your data.</p>
         </div>
       </div>
+      <button id="show-code-btn" class="show-code-btn">{ } show code</button>
     </aside>
+
+    <div id="code-modal" class="code-modal" hidden>
+      <div class="code-modal-box">
+        <div class="code-modal-header">
+          <span class="code-modal-title">Python</span>
+          <div class="code-modal-actions">
+            <button id="copy-code-btn" class="code-action-btn">Copy</button>
+            <button id="close-code-btn" class="code-action-btn">✕</button>
+          </div>
+        </div>
+        <pre id="code-block" class="code-block"></pre>
+      </div>
+    </div>
 
     <section id="plot-container">
       <div id="legend"></div>
