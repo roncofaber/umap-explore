@@ -6,7 +6,7 @@ COPY requirements-runtime.txt .
 RUN pip install --no-cache-dir -r requirements-runtime.txt
 
 # App server and metadata — no sklearn/umap/numpy needed at runtime
-COPY app.py utils.py ./
+COPY app.py ./
 COPY datasets/meta.py datasets/meta.py
 RUN touch datasets/__init__.py
 
