@@ -112,6 +112,8 @@ def get_cluster(
     min_cluster_size: int = Query(15, ge=2),
     min_samples: int = Query(5, ge=1),
     cluster_selection_method: Literal['eom', 'leaf'] = Query('eom'),
+    cluster_selection_epsilon: float = Query(0.0, ge=0.0),
+    allow_single_cluster: bool = Query(False),
 ):
     if not re.match(r'^[a-zA-Z0-9_]+$', dataset_name):
         raise HTTPException(status_code=400, detail="Invalid dataset name")
@@ -132,6 +134,8 @@ def get_cluster(
         min_cluster_size=min_cluster_size,
         min_samples=min_samples,
         cluster_selection_method=cluster_selection_method,
+        cluster_selection_epsilon=cluster_selection_epsilon,
+        allow_single_cluster=allow_single_cluster,
     ).fit(coords)
 
     labels = clusterer.labels_.tolist()
@@ -180,4 +184,6 @@ def get_embedding(
             'z': grp['z'][()].tolist() if 'z' in grp else None,
             'labels': m['labels'][()].tolist(),
             'label_names': _decode(m['label_names'][()]) if 'label_names' in m else None,
+            'explained_variance_ratio': grp['explained_variance_ratio'][()].tolist()
+                                        if 'explained_variance_ratio' in grp else None,
         }

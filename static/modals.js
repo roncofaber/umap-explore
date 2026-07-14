@@ -7,13 +7,17 @@ function generateCode() {
   const ds = DATASET_CODE[state.dataset];
   if (!ds) return '';
   const lines = [];
+  const isHdbscan = state.tab === 'hdbscan';
 
-  if (state.method === 'umap') lines.push('import umap');
-  if (state.method === 'pca')  lines.push('from sklearn.decomposition import PCA');
+  // Imports
+  lines.push('import umap');
+  if (isHdbscan)           lines.push('import hdbscan');
+  if (state.method === 'pca') lines.push('from sklearn.decomposition import PCA');
   lines.push(ds.imports);
   if (state.scale === 'scaled') lines.push('from sklearn.preprocessing import StandardScaler');
   lines.push('');
 
+  // Load
   lines.push('# Load data');
   lines.push(ds.load);
 
@@ -23,9 +27,10 @@ function generateCode() {
     lines.push('X = StandardScaler().fit_transform(X)');
   }
 
+  // Embedding
   lines.push('');
-  if (state.method === 'umap') {
-    lines.push('# Fit UMAP');
+  if (state.method === 'umap' || isHdbscan) {
+    lines.push('# Reduce dimensions with UMAP');
     lines.push('reducer = umap.UMAP(');
     lines.push(`    n_neighbors=${state.nNeighbors},`);
     lines.push(`    min_dist=${state.minDist},`);
@@ -33,10 +38,27 @@ function generateCode() {
     lines.push(`    metric='${state.metric}',`);
     lines.push(')');
   } else {
-    lines.push('# Fit PCA');
+    lines.push('# Reduce dimensions with PCA');
     lines.push('reducer = PCA(n_components=2)');
   }
   lines.push('embedding = reducer.fit_transform(X)');
+
+  // HDBSCAN clustering
+  if (isHdbscan) {
+    lines.push('');
+    lines.push('# Cluster the embedding with HDBSCAN');
+    lines.push('clusterer = hdbscan.HDBSCAN(');
+    lines.push(`    min_cluster_size=${state.minClusterSize},`);
+    lines.push(`    min_samples=${state.minSamples},`);
+    lines.push(`    cluster_selection_method='${state.clusterSelectionMethod}',`);
+    if (state.clusterSelectionEpsilon > 0)
+      lines.push(`    cluster_selection_epsilon=${state.clusterSelectionEpsilon},`);
+    if (state.allowSingleCluster)
+      lines.push(`    allow_single_cluster=True,`);
+    lines.push(')');
+    lines.push('labels = clusterer.fit_predict(embedding)');
+    lines.push('# labels == -1 → noise; labels >= 0 → cluster id');
+  }
 
   return lines.join('\n');
 }

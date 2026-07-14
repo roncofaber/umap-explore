@@ -17,15 +17,17 @@ export async function fetchEmbedding() {
 
 export async function fetchClusterResult() {
   const params = new URLSearchParams({
-    method:                    state.method,
-    n_neighbors:               state.nNeighbors,
-    min_dist:                  state.minDist,
-    n_components:              2,
-    metric:                    state.metric,
-    scale:                     state.scale,
-    min_cluster_size:          state.minClusterSize,
-    min_samples:               state.minSamples,
-    cluster_selection_method:  state.clusterSelectionMethod,
+    method:                     state.method,
+    n_neighbors:                state.nNeighbors,
+    min_dist:                   state.minDist,
+    n_components:               2,
+    metric:                     state.metric,
+    scale:                      state.scale,
+    min_cluster_size:           state.minClusterSize,
+    min_samples:                state.minSamples,
+    cluster_selection_method:   state.clusterSelectionMethod,
+    cluster_selection_epsilon:  state.clusterSelectionEpsilon,
+    allow_single_cluster:       state.allowSingleCluster,
   });
   const resp = await fetch(`/api/cluster/${state.dataset}?${params}`);
   if (!resp.ok) throw new Error(`API error ${resp.status}`);

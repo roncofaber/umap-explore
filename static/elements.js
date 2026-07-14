@@ -35,6 +35,10 @@ export const els = {
   msValue:          q('ms-value'),
   csmEom:           q('csm-eom'),
   csmLeaf:          q('csm-leaf'),
+  cseSlider:        q('cse-slider'),
+  cseValue:         q('cse-value'),
+  ascFalse:         q('asc-false'),
+  ascTrue:          q('asc-true'),
   clusterStat:      q('cluster-stat'),
   // Plot
   plot:             q('plot'),

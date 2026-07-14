@@ -17,6 +17,7 @@ async function fetchAndRender() {
   updateParamStatus();
   try {
     const emb = await fetchEmbedding();
+    state.explainedVarianceRatio = emb.explained_variance_ratio ?? null;
     renderPlot(emb);
     if (state.tab === 'hdbscan') {
       await fetchAndCluster();

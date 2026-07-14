@@ -1,6 +1,6 @@
 import { state } from './state.js';
 import { els } from './elements.js';
-import { MCS_STEPS, MS_STEPS } from './constants.js';
+import { MCS_STEPS, MS_STEPS, CSE_STEPS } from './constants.js';
 import { fetchClusterResult } from './api.js';
 import { updateLegend, rerenderColors } from './legend.js';
 import { positionAllTicks } from './ui.js';
@@ -86,16 +86,34 @@ export function initClusterControls() {
   els.csmEom.addEventListener('click', () => {
     if (state.clusterSelectionMethod === 'eom') return;
     state.clusterSelectionMethod = 'eom';
-    els.csmEom.classList.add('active');
-    els.csmLeaf.classList.remove('active');
+    els.csmEom.classList.add('active'); els.csmLeaf.classList.remove('active');
     fetchAndCluster();
   });
 
   els.csmLeaf.addEventListener('click', () => {
     if (state.clusterSelectionMethod === 'leaf') return;
     state.clusterSelectionMethod = 'leaf';
-    els.csmLeaf.classList.add('active');
-    els.csmEom.classList.remove('active');
+    els.csmLeaf.classList.add('active'); els.csmEom.classList.remove('active');
+    fetchAndCluster();
+  });
+
+  els.cseSlider.addEventListener('input', () => {
+    state.clusterSelectionEpsilon = CSE_STEPS[parseInt(els.cseSlider.value)];
+    els.cseValue.textContent = state.clusterSelectionEpsilon;
+    scheduleCluster();
+  });
+
+  els.ascFalse.addEventListener('click', () => {
+    if (!state.allowSingleCluster) return;
+    state.allowSingleCluster = false;
+    els.ascFalse.classList.add('active'); els.ascTrue.classList.remove('active');
+    fetchAndCluster();
+  });
+
+  els.ascTrue.addEventListener('click', () => {
+    if (state.allowSingleCluster) return;
+    state.allowSingleCluster = true;
+    els.ascTrue.classList.add('active'); els.ascFalse.classList.remove('active');
     fetchAndCluster();
   });
 }

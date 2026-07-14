@@ -11,11 +11,14 @@ export const state = {
   highlightedLabel:      null,        // class highlight (UMAP tab)
   highlightedCluster:    null,        // cluster highlight (HDBSCAN tab)
   colorBy:               'class',     // 'class' | feature index
-  tab:                   'umap',      // 'umap' | 'hdbscan'
-  minClusterSize:        15,
-  minSamples:            5,
-  clusterSelectionMethod: 'eom',
-  clusterResult:         null,
+  tab:                      'umap',   // 'umap' | 'hdbscan'
+  minClusterSize:           15,
+  minSamples:               5,
+  clusterSelectionMethod:   'eom',
+  clusterSelectionEpsilon:  0.0,
+  allowSingleCluster:       false,
+  clusterResult:            null,
+  explainedVarianceRatio:   null,    // [pc1, pc2] from PCA, null otherwise
 };
 
 // Dataset metadata from /api/datasets (populated on init)

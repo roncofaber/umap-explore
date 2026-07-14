@@ -90,10 +90,13 @@ def precompute_dataset(dataset_name, output_dir, n_neighbors_list, min_dist_list
                 print(f"PCA ({scale}) — skipping (cached)")
                 continue
             print(f"PCA ({scale}) — computing...")
-            embedding = PCA(n_components=2).fit_transform(X_by_scale[scale])
+            pca = PCA(n_components=2)
+            embedding = pca.fit_transform(X_by_scale[scale])
             grp = f.create_group(pca_key)
             grp.create_dataset('x', data=embedding[:, 0], compression='gzip')
             grp.create_dataset('y', data=embedding[:, 1], compression='gzip')
+            grp.create_dataset('explained_variance_ratio',
+                               data=pca.explained_variance_ratio_)
             f.flush()
 
     print(f"Done. Saved to {out_file}")

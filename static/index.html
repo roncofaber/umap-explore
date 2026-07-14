@@ -185,6 +185,31 @@
           </div>
         </div>
 
+        <div class="control-group">
+          <div class="param-header">
+            <span>cluster_selection_epsilon</span>
+            <span class="param-value" id="cse-value">0</span>
+            <span class="param-q" data-tip="Minimum distance threshold below which clusters are not split further. Merges nearby micro-clusters. 0 = standard HDBSCAN behaviour.">?</span>
+          </div>
+          <input type="range" id="cse-slider" min="0" max="4" step="1" value="0">
+          <div class="slider-ticks">
+            <span>0</span><span>.1</span><span>.25</span><span>.5</span><span>1</span>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <div class="param-header">
+            <span>allow_single_cluster</span>
+            <span class="param-q" data-tip="Allow HDBSCAN to return a single cluster. Useful when the data has little structure or is mostly noise.">?</span>
+          </div>
+          <div class="param-block">
+            <div class="toggle-group">
+              <button id="asc-false" class="toggle active">False</button>
+              <button id="asc-true" class="toggle">True</button>
+            </div>
+          </div>
+        </div>
+
         <div id="cluster-stat" class="cluster-stat" hidden></div>
       </div><!-- /tab-content-hdbscan -->
 

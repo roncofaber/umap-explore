@@ -3,6 +3,7 @@ export const N_NEIGHBORS_STEPS = [5, 10, 15, 20, 30, 50, 100];
 export const MIN_DIST_STEPS    = [0.0, 0.05, 0.1, 0.25, 0.5, 1.0];
 export const MCS_STEPS         = [5, 10, 15, 20, 30, 50];
 export const MS_STEPS          = [1, 3, 5, 10, 15, 20];
+export const CSE_STEPS         = [0.0, 0.1, 0.25, 0.5, 1.0]; // cluster_selection_epsilon
 
 // ── Plotly layout constants ───────────────────────────────────────────────────
 // l+r = t+b = 120 → equal margins keep the axes box square

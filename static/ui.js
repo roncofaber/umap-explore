@@ -7,9 +7,16 @@ import { rerenderColors } from './legend.js';
 export function updateParamStatus() {
   if (!els.paramStatus) return;
   const scale = state.scale === 'scaled' ? 'scaled' : 'raw';
-  els.paramStatus.textContent = state.method === 'pca'
-    ? `PCA  ·  ${scale}`
-    : `n_neighbors=${state.nNeighbors}  ·  min_dist=${state.minDist}  ·  metric=${state.metric}  ·  ${scale}`;
+  if (state.method === 'pca') {
+    const evr = state.explainedVarianceRatio;
+    const variance = evr
+      ? `  ·  PC1: ${(evr[0] * 100).toFixed(1)}%  ·  PC2: ${(evr[1] * 100).toFixed(1)}%`
+      : '';
+    els.paramStatus.textContent = `PCA  ·  ${scale}${variance}`;
+  } else {
+    els.paramStatus.textContent =
+      `n_neighbors=${state.nNeighbors}  ·  min_dist=${state.minDist}  ·  metric=${state.metric}  ·  ${scale}`;
+  }
 }
 
 // ── Dataset info card ─────────────────────────────────────────────────────────
@@ -94,7 +101,9 @@ export function positionTicks(slider) {
 }
 
 export function positionAllTicks() {
-  [els.nnSlider, els.mdSlider, els.mcsSlider, els.msSlider].forEach(positionTicks);
+  [els.nnSlider, els.mdSlider, els.mcsSlider, els.msSlider, els.cseSlider]
+    .filter(Boolean)
+    .forEach(positionTicks);
 }
 
 // ── Tooltips ──────────────────────────────────────────────────────────────────
