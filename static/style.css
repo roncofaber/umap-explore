@@ -427,6 +427,22 @@ input[type="range"]::-moz-range-thumb {
   line-height: 1.5;
 }
 
+/* ── Reset button ────────────────────────── */
+.reset-btn {
+  background: none;
+  border: none;
+  color: var(--text-3);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--font-2xs);
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: color 0.15s;
+  margin-left: auto;
+}
+
+.reset-btn:hover { color: var(--accent); }
+
 /* ── Bottom action buttons ───────────────── */
 .bottom-actions {
   display: flex;
@@ -597,6 +613,12 @@ input[type="range"]::-moz-range-thumb {
 }
 
 #plot { width: 100%; height: 100%; }
+
+/* ── Legend interactions ─────────────────── */
+.legend-item { cursor: pointer; transition: opacity 0.15s; }
+.legend-item.dimmed { opacity: 0.3; }
+
+#plot { cursor: crosshair; }
 
 /* ── Legend ──────────────────────────────── */
 #legend {

@@ -64,7 +64,10 @@
       </div>
 
       <div id="umap-params">
-        <div class="params-divider">Parameters</div>
+        <div class="params-divider">
+          Parameters
+          <button id="reset-btn" class="reset-btn" title="Reset to defaults">↺ reset</button>
+        </div>
 
         <div class="control-group">
           <div class="param-block">
@@ -104,6 +107,20 @@
           <p class="param-description">How distances between points are measured in the original space. Different metrics can reveal different structure in your data.</p>
         </div>
       </div>
+
+      <div class="control-group" id="color-by-group" hidden>
+        <div class="param-block">
+          <span class="pname">color_by</span><span class="peq"> = </span>
+          <span class="pval-wrap">
+            <select id="color-by-select" class="pval-select">
+              <option value="class">class</option>
+            </select>
+            <span class="pval-caret">▾</span>
+          </span>
+        </div>
+        <p class="param-description">Color points by class label or by the value of any individual feature.</p>
+      </div>
+
       <div class="bottom-actions">
         <button id="show-code-btn" class="action-btn">{ } code</button>
         <button id="view-data-btn" class="action-btn">⊞ data</button>

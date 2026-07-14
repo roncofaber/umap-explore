@@ -57,6 +57,7 @@ def list_datasets():
             m = f['_meta']
             n_points = int(m['n_points'][()])
             label_names = _decode(m['label_names'][()]) if 'label_names' in m else None
+            feature_names = _decode(m['feature_names'][()]) if 'feature_names' in m else None
         result.append({
             "name": name,
             "label": meta["label"],
@@ -65,6 +66,7 @@ def list_datasets():
             "description": meta.get("description"),
             "has_labels": label_names is not None,
             "label_colors": _label_colors(label_names),
+            "feature_names": feature_names,
         })
     return result
 

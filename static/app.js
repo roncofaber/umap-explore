@@ -9,6 +9,8 @@ const state = {
   metric: 'euclidean',
   scale: 'scaled',
   isFirstRender: true,
+  highlightedLabel: null,   // null = no highlight; integer = highlighted class index
+  colorBy: 'class',         // 'class' or feature index (integer)
 };
 
 const els = {
@@ -27,11 +29,14 @@ const els = {
   datasetInfo:   document.getElementById('dataset-info'),
   datasetStats:  document.getElementById('dataset-stats'),
   datasetDesc:   document.getElementById('dataset-desc'),
-  scaleOn:       document.getElementById('scale-on'),
-  scaleOff:      document.getElementById('scale-off'),
-  plot:          document.getElementById('plot'),
-  legend:        document.getElementById('legend'),
-  loading:       document.getElementById('loading'),
+  scaleOn:         document.getElementById('scale-on'),
+  scaleOff:        document.getElementById('scale-off'),
+  colorBySelect:   document.getElementById('color-by-select'),
+  colorByGroup:    document.getElementById('color-by-group'),
+  resetBtn:        document.getElementById('reset-btn'),
+  plot:            document.getElementById('plot'),
+  legend:          document.getElementById('legend'),
+  loading:         document.getElementById('loading'),
 };
 
 // ── Axis range ────────────────────────────────────────────────────────────────
@@ -80,6 +85,15 @@ els.sidebarToggle.addEventListener('click', () => {
 });
 
 updateToggleLabel();
+
+// ── Instant color/highlight re-render (no position animation) ────────────────
+
+function rerenderColors() {
+  if (!currentEmb) return;
+  Plotly.react(els.plot, [makeTrace(currentEmb)], makeLayout(currentEmb));
+  updateLegend(currentEmb);
+  requestAnimationFrame(repositionLegend);
+}
 
 // ── Slider tick positioning ───────────────────────────────────────────────────
 // CSS flex/grid can't perfectly center variable-width labels at thumb positions,
@@ -144,14 +158,23 @@ function repositionLegend() {
 }
 
 function updateLegend(emb) {
-  if (emb.label_names === null) { els.legend.innerHTML = ''; return; }
+  if (emb.label_names === null || state.colorBy !== 'class') {
+    els.legend.innerHTML = '';
+    return;
+  }
   const palette = datasetInfo[state.dataset]?.label_colors || [];
-  els.legend.innerHTML = emb.label_names.map((name, i) =>
-    `<div class="legend-item">
-       <span class="legend-dot" style="background:${palette[i] || '#888'}"></span>
-       <span class="legend-label">${name}</span>
-     </div>`
-  ).join('');
+  const hl = state.highlightedLabel;
+  els.legend.innerHTML = emb.label_names.map((name, i) => {
+    const dimmed = hl !== null && i !== hl ? ' dimmed' : '';
+    return `<div class="legend-item${dimmed}" data-label="${i}">
+      <span class="legend-dot" style="background:${palette[i] || '#888'}"></span>
+      <span class="legend-label">${name}</span>
+    </div>`;
+  }).join('');
+
+  els.legend.querySelectorAll('.legend-item').forEach(item => {
+    item.addEventListener('click', () => toggleHighlight(parseInt(item.dataset.label)));
+  });
 }
 
 // ── Plotly trace / layout ─────────────────────────────────────────────────────
@@ -164,7 +187,25 @@ function makeTrace(emb) {
 
   const marker = { size: 5, opacity: 0.8 };
 
-  if (isContinuous) {
+  if (state.colorBy !== 'class') {
+    // Color by a specific feature value
+    const fd = cachedData[state.dataset]?.[state.scale];
+    const vals = fd ? fd.X.map(row => row[state.colorBy]) : emb.labels;
+    const fname = datasetInfo[state.dataset]?.feature_names?.[state.colorBy] || `feature ${state.colorBy}`;
+    marker.color = vals;
+    marker.colorscale = 'Viridis';
+    marker.showscale = true;
+    marker.colorbar = {
+      thickness: 12, len: 0.7, tickfont: TICK_FONT,
+      title: { text: fname, font: TICK_FONT, side: 'right' },
+    };
+  } else if (!isContinuous && state.highlightedLabel !== null) {
+    // Highlight one class, mute the rest
+    const palette = datasetInfo[state.dataset]?.label_colors;
+    marker.color = emb.labels.map(l =>
+      l === state.highlightedLabel ? (palette ? palette[l] : '#5469d4') : '#d0d5e8'
+    );
+  } else if (isContinuous) {
     marker.color = emb.labels;
     marker.colorscale = 'Viridis';
     marker.showscale = true;
@@ -283,6 +324,78 @@ function scheduleRender() {
   renderTimer = setTimeout(fetchAndRender, 300);
 }
 
+// ── Highlight ─────────────────────────────────────────────────────────────────
+
+function toggleHighlight(label) {
+  state.highlightedLabel = state.highlightedLabel === label ? null : label;
+  rerenderColors();
+}
+
+// ── Reset ─────────────────────────────────────────────────────────────────────
+
+function resetParams() {
+  state.nNeighbors = 15; state.minDist = 0.1;
+  state.metric = 'euclidean'; state.scale = 'scaled';
+  state.method = 'umap'; state.highlightedLabel = null; state.colorBy = 'class';
+
+  els.nnSlider.value = N_NEIGHBORS_STEPS.indexOf(15); els.nnValue.textContent = 15;
+  els.mdSlider.value = MIN_DIST_STEPS.indexOf(0.1);   els.mdValue.textContent = 0.1;
+  els.metricSelect.value = 'euclidean';
+  els.scaleOn.classList.add('active');   els.scaleOff.classList.remove('active');
+  els.methodUmap.classList.add('active'); els.methodPca.classList.remove('active');
+  els.umapParams.classList.remove('params-disabled');
+  if (els.colorBySelect) els.colorBySelect.value = 'class';
+
+  requestAnimationFrame(positionAllTicks);
+  state.isFirstRender = true;
+  fetchAndRender();
+}
+
+// ── Color by feature ──────────────────────────────────────────────────────────
+
+async function ensureFeatureData() {
+  const ds = state.dataset, sc = state.scale;
+  if (cachedData[ds]?.[sc]) return cachedData[ds][sc];
+  els.loading.style.display = 'block';
+  try {
+    const resp = await fetch(`/api/data/${ds}?scale=${sc}`);
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    cachedData[ds] = cachedData[ds] || {};
+    cachedData[ds][sc] = data;
+    return data;
+  } finally {
+    els.loading.style.display = 'none';
+  }
+}
+
+function updateColorByOptions() {
+  if (!els.colorBySelect) return;
+  const sel = els.colorBySelect;
+  while (sel.options.length > 1) sel.remove(1);
+  const names = datasetInfo[state.dataset]?.feature_names;
+  if (!names || names.length === 0) {
+    if (els.colorByGroup) els.colorByGroup.hidden = true;
+    return;
+  }
+  if (els.colorByGroup) els.colorByGroup.hidden = false;
+  names.forEach((name, i) => {
+    const opt = document.createElement('option');
+    opt.value = i; opt.textContent = name;
+    sel.appendChild(opt);
+  });
+  state.colorBy = 'class';
+  sel.value = 'class';
+}
+
+async function onColorByChange() {
+  const val = els.colorBySelect.value;
+  state.colorBy = val === 'class' ? 'class' : parseInt(val);
+  state.highlightedLabel = null;
+  if (state.colorBy !== 'class') await ensureFeatureData();
+  rerenderColors();
+}
+
 // ── Event listeners ───────────────────────────────────────────────────────────
 
 els.nnSlider.addEventListener('input', () => {
@@ -339,8 +452,24 @@ els.scaleOff.addEventListener('click', () => {
 els.datasetSelect.addEventListener('change', () => {
   state.dataset = els.datasetSelect.value;
   state.isFirstRender = true;
+  state.highlightedLabel = null;
+  state.colorBy = 'class';
   updateDatasetInfo();
+  updateColorByOptions();
   fetchAndRender();
+});
+
+if (els.colorBySelect) els.colorBySelect.addEventListener('change', onColorByChange);
+if (els.resetBtn)      els.resetBtn.addEventListener('click', resetParams);
+
+// Plot click → highlight a class; double-click → clear
+els.plot.on('plotly_click', data => {
+  if (!currentEmb || currentEmb.label_names === null || state.colorBy !== 'class') return;
+  if (!data.points.length) return;
+  toggleHighlight(currentEmb.labels[data.points[0].pointIndex]);
+});
+els.plot.on('plotly_doubleclick', () => {
+  if (state.highlightedLabel !== null) { state.highlightedLabel = null; rerenderColors(); }
 });
 
 // ── Show code modal ───────────────────────────────────────────────────────────
@@ -480,7 +609,13 @@ function closeDataModal() {
 
 closeDataBtn.addEventListener('click', closeDataModal);
 dataModal.addEventListener('click', e => { if (e.target === dataModal) closeDataModal(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeDataModal(); } });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeDataModal();
+    codeModal.hidden = true;
+    if (state.highlightedLabel !== null) { state.highlightedLabel = null; rerenderColors(); }
+  }
+});
 
 dataBtnRaw.addEventListener('click', () => {
   dataScale = 'raw';
@@ -513,10 +648,6 @@ codeModal.addEventListener('click', e => {
   if (e.target === codeModal) codeModal.hidden = true;
 });
 
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') codeModal.hidden = true;
-});
-
 copyCodeBtn.addEventListener('click', () => {
   navigator.clipboard.writeText(codeBlock.textContent).then(() => {
     const orig = copyCodeBtn.textContent;
@@ -546,6 +677,7 @@ async function init() {
     if (datasets.length > 0) {
       state.dataset = datasets[0].name;
       updateDatasetInfo();
+      updateColorByOptions();
       fetchAndRender();
     }
     requestAnimationFrame(positionAllTicks);
