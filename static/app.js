@@ -260,6 +260,20 @@ function makeLayout(emb) {
 
 let currentEmb = null;
 let animFrame  = null;
+let plotListenersAttached = false;
+
+function attachPlotListeners() {
+  if (plotListenersAttached) return;
+  plotListenersAttached = true;
+  els.plot.on('plotly_click', data => {
+    if (!currentEmb || currentEmb.label_names === null || state.colorBy !== 'class') return;
+    if (!data.points.length) return;
+    toggleHighlight(currentEmb.labels[data.points[0].pointIndex]);
+  });
+  els.plot.on('plotly_doubleclick', () => {
+    if (state.highlightedLabel !== null) { state.highlightedLabel = null; rerenderColors(); }
+  });
+}
 
 function cubicInOut(t) {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
@@ -280,6 +294,7 @@ function renderPlot(emb) {
   if (state.isFirstRender || !currentEmb || currentEmb.x.length !== emb.x.length) {
     if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
     Plotly.react(els.plot, [makeTrace(emb)], makeLayout(emb), { responsive: true });
+    attachPlotListeners();
     state.isFirstRender = false;
     currentEmb = emb;
     return;
@@ -462,15 +477,7 @@ els.datasetSelect.addEventListener('change', () => {
 if (els.colorBySelect) els.colorBySelect.addEventListener('change', onColorByChange);
 if (els.resetBtn)      els.resetBtn.addEventListener('click', resetParams);
 
-// Plot click → highlight a class; double-click → clear
-els.plot.on('plotly_click', data => {
-  if (!currentEmb || currentEmb.label_names === null || state.colorBy !== 'class') return;
-  if (!data.points.length) return;
-  toggleHighlight(currentEmb.labels[data.points[0].pointIndex]);
-});
-els.plot.on('plotly_doubleclick', () => {
-  if (state.highlightedLabel !== null) { state.highlightedLabel = null; rerenderColors(); }
-});
+// Plot click listeners are attached lazily after first Plotly render (see attachPlotListeners)
 
 // ── Show code modal ───────────────────────────────────────────────────────────
 
