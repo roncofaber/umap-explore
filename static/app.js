@@ -16,6 +16,7 @@ const state = {
   minSamples: 5,
   clusterSelectionMethod: 'eom',
   clusterResult: null,      // latest HDBSCAN result from server
+  highlightedCluster: null, // null = no highlight; integer = highlighted cluster label
 };
 
 const els = {
@@ -179,16 +180,25 @@ function repositionLegend() {
 
 function updateLegend(emb) {
   if (state.tab === 'hdbscan' && state.clusterResult) {
-    const { cluster_names, cluster_colors, n_noise } = state.clusterResult;
+    const { cluster_names, cluster_colors, n_noise, labels } = state.clusterResult;
+    const hl = state.highlightedCluster;
+    const uniqueClusters = [...new Set(labels.filter(l => l >= 0))].sort((a, b) => a - b);
     const noiseItem = n_noise > 0
-      ? `<div class="legend-item"><span class="legend-dot" style="background:#c0c8d8"></span><span class="legend-label">noise</span></div>`
+      ? `<div class="legend-item${hl !== null && hl !== -1 ? ' dimmed' : ''}" data-cluster="-1">
+           <span class="legend-dot" style="background:#c0c8d8"></span>
+           <span class="legend-label">noise</span>
+         </div>`
       : '';
-    els.legend.innerHTML = cluster_names.map((name, i) =>
-      `<div class="legend-item">
-         <span class="legend-dot" style="background:${cluster_colors[i]}"></span>
-         <span class="legend-label">${name}</span>
-       </div>`
-    ).join('') + noiseItem;
+    els.legend.innerHTML = uniqueClusters.map((cl, i) => {
+      const dimmed = hl !== null && cl !== hl ? ' dimmed' : '';
+      return `<div class="legend-item${dimmed}" data-cluster="${cl}">
+        <span class="legend-dot" style="background:${cluster_colors[i]}"></span>
+        <span class="legend-label">cluster ${cl}</span>
+      </div>`;
+    }).join('') + noiseItem;
+    els.legend.querySelectorAll('.legend-item').forEach(item => {
+      item.addEventListener('click', () => toggleClusterHighlight(parseInt(item.dataset.cluster)));
+    });
     return;
   }
 
@@ -223,7 +233,10 @@ function makeTrace(emb) {
 
   if (state.tab === 'hdbscan' && state.clusterResult) {
     const { colors, labels } = state.clusterResult;
-    marker.color = colors;
+    const hl = state.highlightedCluster;
+    marker.color = hl !== null
+      ? labels.map((l, i) => l === hl ? colors[i] : '#d0d5e8')
+      : colors;
     hoverText.splice(0, hoverText.length,
       ...labels.map(l => l >= 0 ? `cluster ${l}` : 'noise'));
   } else if (state.colorBy !== 'class') {
@@ -310,12 +323,18 @@ function attachPlotListeners() {
   if (plotListenersAttached) return;
   plotListenersAttached = true;
   els.plot.on('plotly_click', data => {
-    if (!currentEmb || currentEmb.label_names === null || state.colorBy !== 'class') return;
     if (!data.points.length) return;
-    toggleHighlight(currentEmb.labels[data.points[0].pointIndex]);
+    const idx = data.points[0].pointIndex;
+    if (state.tab === 'hdbscan' && state.clusterResult) {
+      toggleClusterHighlight(state.clusterResult.labels[idx]);
+      return;
+    }
+    if (!currentEmb || currentEmb.label_names === null || state.colorBy !== 'class') return;
+    toggleHighlight(currentEmb.labels[idx]);
   });
   els.plot.on('plotly_doubleclick', () => {
-    if (state.highlightedLabel !== null) { state.highlightedLabel = null; rerenderColors(); }
+    if (state.highlightedLabel !== null)  { state.highlightedLabel  = null; rerenderColors(); }
+    if (state.highlightedCluster !== null){ state.highlightedCluster = null; rerenderColors(); }
   });
 }
 
@@ -431,12 +450,15 @@ function scheduleCluster() {
 
 function switchTab(tab) {
   state.tab = tab;
+  state.highlightedCluster = null;
   els.tabUmap.classList.toggle('active', tab === 'umap');
   els.tabHdbscan.classList.toggle('active', tab === 'hdbscan');
   els.contentUmap.hidden = tab !== 'umap';
   els.contentHdbscan.hidden = tab !== 'hdbscan';
 
   if (tab === 'hdbscan') {
+    // Ticks were hidden while tab was invisible — reposition now that they're visible
+    requestAnimationFrame(positionAllTicks);
     fetchAndCluster();
   } else {
     state.clusterResult = null;
@@ -450,13 +472,31 @@ els.tabHdbscan.addEventListener('click', () => switchTab('hdbscan'));
 
 els.mcsSlider.addEventListener('input', () => {
   state.minClusterSize = MCS_STEPS[parseInt(els.mcsSlider.value)];
-  els.mcsValue.textContent = state.minClusterSize;
+  els.mcsValue.value = state.minClusterSize;
+  scheduleCluster();
+});
+
+els.mcsValue.addEventListener('change', () => {
+  const v = Math.max(2, parseInt(els.mcsValue.value) || 2);
+  state.minClusterSize = v;
+  els.mcsValue.value = v;
+  const idx = MCS_STEPS.reduce((bi, s, i) => Math.abs(s - v) < Math.abs(MCS_STEPS[bi] - v) ? i : bi, 0);
+  els.mcsSlider.value = idx;
   scheduleCluster();
 });
 
 els.msSlider.addEventListener('input', () => {
   state.minSamples = MS_STEPS[parseInt(els.msSlider.value)];
-  els.msValue.textContent = state.minSamples;
+  els.msValue.value = state.minSamples;
+  scheduleCluster();
+});
+
+els.msValue.addEventListener('change', () => {
+  const v = Math.max(1, parseInt(els.msValue.value) || 1);
+  state.minSamples = v;
+  els.msValue.value = v;
+  const idx = MS_STEPS.reduce((bi, s, i) => Math.abs(s - v) < Math.abs(MS_STEPS[bi] - v) ? i : bi, 0);
+  els.msSlider.value = idx;
   scheduleCluster();
 });
 
@@ -478,6 +518,11 @@ els.csmLeaf.addEventListener('click', () => {
 
 function toggleHighlight(label) {
   state.highlightedLabel = state.highlightedLabel === label ? null : label;
+  rerenderColors();
+}
+
+function toggleClusterHighlight(label) {
+  state.highlightedCluster = state.highlightedCluster === label ? null : label;
   rerenderColors();
 }
 
@@ -603,6 +648,7 @@ els.datasetSelect.addEventListener('change', () => {
   state.dataset = els.datasetSelect.value;
   state.isFirstRender = true;
   state.highlightedLabel = null;
+  state.highlightedCluster = null;
   state.colorBy = 'class';
   updateDatasetInfo();
   updateColorByOptions();
@@ -755,7 +801,8 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     closeDataModal();
     codeModal.hidden = true;
-    if (state.highlightedLabel !== null) { state.highlightedLabel = null; rerenderColors(); }
+    if (state.highlightedLabel  !== null) { state.highlightedLabel  = null; rerenderColors(); }
+    if (state.highlightedCluster !== null){ state.highlightedCluster = null; rerenderColors(); }
   }
 });
 

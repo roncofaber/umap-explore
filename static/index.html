@@ -51,8 +51,8 @@
         <div class="params-divider">Method</div>
 
         <div class="control-group">
+          <div class="param-header"><span>method</span></div>
           <div class="param-block">
-            <span class="pname">method</span><span class="peq"> = </span>
             <div class="toggle-group">
               <button id="method-umap" class="toggle active">UMAP</button>
               <button id="method-pca" class="toggle">PCA</button>
@@ -68,7 +68,6 @@
             <span class="param-q" data-tip="Normalize each feature to zero mean and unit variance before embedding. Disable to see the effect of raw feature scales on the projection.">?</span>
           </div>
           <div class="param-block">
-            <span class="pname">StandardScaler</span><span class="peq"> = </span>
             <div class="toggle-group">
               <button id="scale-on" class="toggle active">True</button>
               <button id="scale-off" class="toggle">False</button>
@@ -159,7 +158,7 @@
           <p>HDBSCAN finds clusters of varying density without requiring you to specify the number of clusters in advance. Points that don't belong to any cluster are labeled as noise. It runs here on the current UMAP embedding.</p>
           <div class="explainer-links">
             <a href="https://hdbscan.readthedocs.io/" target="_blank" rel="noopener">Docs</a>
-            <a href="https://arxiv.org/abs/1911.02282" target="_blank" rel="noopener">Paper</a>
+            <a href="https://joss.theoj.org/papers/10.21105/joss.00205" target="_blank" rel="noopener">Paper</a>
           </div>
         </details>
 
@@ -171,7 +170,8 @@
             <span class="param-q" data-tip="The minimum number of points to form a cluster. This is the primary parameter — set it to the smallest group size you consider meaningful.">?</span>
           </div>
           <div class="param-block">
-            <span class="pname">min_cluster_size</span><span class="peq"> = </span><span class="pval" id="mcs-value">15</span>
+            <span class="pname">min_cluster_size</span><span class="peq"> = </span>
+            <input type="number" id="mcs-value" class="pval-input" value="15" min="2" max="500" step="1">
           </div>
           <input type="range" id="mcs-slider" min="0" max="5" step="1" value="2">
           <div class="slider-ticks">
@@ -185,7 +185,8 @@
             <span class="param-q" data-tip="Controls how conservative clustering is. Larger values declare more points as noise and restrict clusters to denser regions. Defaults to min_cluster_size if not set.">?</span>
           </div>
           <div class="param-block">
-            <span class="pname">min_samples</span><span class="peq"> = </span><span class="pval" id="ms-value">5</span>
+            <span class="pname">min_samples</span><span class="peq"> = </span>
+            <input type="number" id="ms-value" class="pval-input" value="5" min="1" max="200" step="1">
           </div>
           <input type="range" id="ms-slider" min="0" max="5" step="1" value="2">
           <div class="slider-ticks">
@@ -199,7 +200,6 @@
             <span class="param-q" data-tip="'eom' (Excess of Mass) tends to find a few large clusters. 'leaf' finds many smaller, more homogeneous clusters.">?</span>
           </div>
           <div class="param-block">
-            <span class="pname">cluster_selection_method</span><span class="peq"> = </span>
             <div class="toggle-group">
               <button id="csm-eom" class="toggle active">eom</button>
               <button id="csm-leaf" class="toggle">leaf</button>

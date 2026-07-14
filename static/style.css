@@ -377,9 +377,28 @@ select:focus, select:hover { border-color: var(--accent); }
 /* hide the old manual caret — arrow is now in the background-image */
 .pval-caret { display: none; }
 
-/* Toggle inside param-block */
+/* Editable numeric value inside param-block */
+.pval-input {
+  background: none;
+  border: none;
+  color: var(--green);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--font-ui);
+  font-weight: 600;
+  width: 5ch;
+  outline: none;
+  padding: 0;
+  -moz-appearance: textfield;
+  text-align: left;
+}
+.pval-input::-webkit-outer-spin-button,
+.pval-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+.pval-input:focus { background: rgba(29,127,69,0.08); border-radius: 3px; }
+
+/* Toggle inside param-block — flex:1 so it fills the block when used alone */
 .param-block .toggle-group {
-  display: inline-flex;
+  display: flex;
+  flex: 1;
   border: 1px solid var(--border);
   border-radius: 4px;
   overflow: hidden;
