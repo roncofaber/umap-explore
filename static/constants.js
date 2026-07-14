@@ -7,7 +7,7 @@ export const CSE_STEPS         = [0.0, 0.1, 0.25, 0.5, 1.0]; // cluster_selectio
 
 // ── Plotly layout constants ───────────────────────────────────────────────────
 // l+r = t+b = 120 → equal margins keep the axes box square
-export const MARGIN = { t: 30, r: 60, b: 90, l: 60 };
+export const MARGIN = { t: 30, r: 70, b: 110, l: 70 }; // l+r = t+b = 140 → square axes box
 
 export const AXIS_LABEL_FONT = {
   family: "'JetBrains Mono', monospace",

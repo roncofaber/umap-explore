@@ -152,7 +152,7 @@ export function setClusterView(view) {
   els.viewTree.classList.toggle('active', isTree);
   els.plot.closest('#plot-wrapper').hidden = isTree;
   els.treeWrapper.hidden = !isTree;
-  els.legend.style.display = isTree ? 'none' : '';   // hide scatter legend in tree view
+  // scatter legend is now inside Plotly — nothing to hide/show
   if (isTree) fetchTree();
 }
 
@@ -207,7 +207,6 @@ export function switchTab(tab) {
     els.viewTree.classList.remove('active');
     els.plot.closest('#plot-wrapper').hidden = false;
     els.treeWrapper.hidden = true;
-    els.legend.style.display = '';
     rerenderColors();
   }
 }

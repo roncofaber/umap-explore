@@ -48,7 +48,6 @@ export const els = {
   clusterStat:      q('cluster-stat'),
   // Plot
   plot:             q('plot'),
-  legend:           q('legend'),
   loading:          q('loading'),
   loadingMsg:       q('loading-msg'),
   // Sidebar
