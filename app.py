@@ -8,13 +8,8 @@ from typing import Literal
 
 import colorcet as cc
 import h5py
-import io
 import numpy as np
 import hdbscan as hdbscan_lib
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-from fastapi.responses import Response
 from datasets.meta import DATASETS_META, make_key
 
 
@@ -217,38 +212,47 @@ def get_cluster_tree(
                           cluster_selection_epsilon, allow_single_cluster)
     ).fit(coords)
 
+    n = len(coords)
     palette = cc.glasbey_dark
-    fig, ax = plt.subplots(figsize=(9, 4))
-    fig.patch.set_facecolor('#eef0f5')
-    ax.set_facecolor('#eef0f5')
+    tree_df = clusterer.condensed_tree_.to_pandas()
+    selected = set(int(x) for x in clusterer.condensed_tree_._select_clusters())
+    sorted_selected = sorted(selected)
+    node_to_label = {node: i for i, node in enumerate(sorted_selected)}
 
-    clusterer.condensed_tree_.plot(
-        select_clusters=True,
-        selection_palette=palette,
-        axis=ax,
-    )
+    # Build node info: every row where child_size > 1 is an internal cluster node.
+    # The root is the node that appears as parent but never as a child (ID = n).
+    root_id = int(tree_df['parent'].min())
+    node_map = {root_id: {'id': root_id, 'parent': -1, 'birth_lambda': 0.0,
+                           'size': n, 'death_lambda': 0.0}}
 
-    # Annotate the epsilon threshold as a vertical line (λ = 1/ε)
-    if cluster_selection_epsilon > 0:
-        lam_eps = 1.0 / cluster_selection_epsilon
-        ax.axvline(lam_eps, color='#e05252', linewidth=1.5, linestyle='--', zorder=5)
-        ax.text(lam_eps, ax.get_ylim()[1] * 0.98,
-                f'ε = {cluster_selection_epsilon}',
-                color='#e05252', fontsize=9, ha='left', va='top',
-                fontfamily='monospace')
+    for _, row in tree_df[tree_df['child_size'] > 1].iterrows():
+        cid, pid = int(row['child']), int(row['parent'])
+        if cid not in node_map:
+            node_map[cid] = {'id': cid, 'parent': pid,
+                              'birth_lambda': float(row['lambda_val']),
+                              'size': int(row['child_size']), 'death_lambda': 0.0}
 
-    ax.set_xlabel('λ  (1 / distance)', fontsize=11, labelpad=6)
-    ax.set_ylabel('Cluster size', fontsize=11, labelpad=6)
-    ax.tick_params(labelsize=9)
-    for spine in ('top', 'right'):
-        ax.spines[spine].set_visible(False)
-    fig.tight_layout()
+    for _, row in tree_df.iterrows():
+        pid = int(row['parent'])
+        if pid in node_map:
+            node_map[pid]['death_lambda'] = max(
+                node_map[pid]['death_lambda'], float(row['lambda_val']))
 
-    buf = io.StringIO()
-    fig.savefig(buf, format='svg', bbox_inches='tight', facecolor='#eef0f5')
-    plt.close(fig)
+    nodes = []
+    for info in node_map.values():
+        is_sel = info['id'] in selected
+        label = node_to_label.get(info['id'], -1)
+        color = palette[label % len(palette)] if is_sel else '#c0c8d8'
+        nodes.append({
+            'id': info['id'], 'parent': info['parent'],
+            'birth_lambda': info['birth_lambda'],
+            'death_lambda': max(info['death_lambda'], info['birth_lambda'] + 1e-6),
+            'size': info['size'], 'selected': is_sel,
+            'label': label, 'color': color,
+        })
 
-    return Response(content=buf.getvalue(), media_type='image/svg+xml')
+    return {'nodes': nodes, 'n_points': n,
+            'epsilon': cluster_selection_epsilon, 'n_clusters': len(selected)}
 
 
 @app.get("/api/embeddings/{dataset_name}")
