@@ -208,12 +208,41 @@ async function init() {
   }
 }
 
+// ── Home reset (title click) ──────────────────────────────────────────────────
+function resetToHome() {
+  els.plotSettings.hidden = true;
+  els.settingsBtn.classList.remove('active');
+  if (state.tab === 'hdbscan') switchTab('umap');
+  const firstOption = els.datasetSelect.options[0];
+  if (firstOption && firstOption.value !== state.dataset) {
+    state.dataset = firstOption.value;
+    els.datasetSelect.value = firstOption.value;
+    state.highlightedLabel = null;
+    state.highlightedCluster = null;
+    state.colorBy = 'class';
+    updateDatasetInfo();
+    updateColorByOptions();
+  }
+  resetParams();
+}
+
 // ── Plot settings ─────────────────────────────────────────────────────────────
 function wireSettings() {
-  els.settingsBtn.addEventListener('click', () => {
+  els.homeBtn.addEventListener('click', resetToHome);
+
+  els.settingsBtn.addEventListener('click', e => {
+    e.stopPropagation();
     els.plotSettings.hidden = !els.plotSettings.hidden;
     els.settingsBtn.classList.toggle('active', !els.plotSettings.hidden);
   });
+
+  // Close dropdown when clicking anywhere outside it
+  els.plotSettings.addEventListener('click', e => e.stopPropagation());
+  document.addEventListener('click', () => {
+    els.plotSettings.hidden = true;
+    els.settingsBtn.classList.remove('active');
+  });
+
   els.psSize.addEventListener('input', () => {
     state.pointSize = parseInt(els.psSize.value);
     els.psSizeVal.textContent = state.pointSize;

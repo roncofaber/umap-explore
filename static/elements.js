@@ -51,6 +51,8 @@ export const els = {
   // Sidebar
   sidebarToggle:    q('sidebar-toggle'),
   sidebar:          q('controls'),
+  // Header
+  homeBtn:          q('home-btn'),
   // Modals
   showCodeBtn:      q('show-code-btn'),
   viewDataBtn:      q('view-data-btn'),
