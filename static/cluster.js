@@ -78,15 +78,21 @@ function renderTreePlot(data) {
     });
   }
 
+  // Clamp x-axis to actual bar extents so Plotly doesn't add whitespace.
+  const xMin = Math.min(...bars.centers.map((c, i) => c - bars.widths[i] / 2));
+  const xMax = Math.max(...bars.centers.map((c, i) => c + bars.widths[i] / 2));
+  const xPad = (xMax - xMin) * 0.01;
+
   Plotly.react(els.treeWrapper, traces, {
-    margin: { t: 20, r: 20, b: 70, l: 70 },
+    margin: { t: 20, r: 20, b: 70, l: 55 },
     paper_bgcolor: '#eef0f5', plot_bgcolor: '#eef0f5',
     bargap: 0,
     showlegend: selected_clusters.length > 0,
     legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.18,
               font: { family: SANS, size: 12, color: '#515978' } },
     shapes, annotations,
-    xaxis: { visible: false, showgrid: false, zeroline: false },
+    xaxis: { visible: false, showgrid: false, zeroline: false,
+             range: [xMin - xPad, xMax + xPad] },
     yaxis: {
       title: { text: 'λ  (1 / distance)', font: AXIS_LABEL_FONT, standoff: 6 },
       autorange: 'reversed',
