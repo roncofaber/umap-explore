@@ -1,0 +1,48 @@
+// ── Slider step values ────────────────────────────────────────────────────────
+export const N_NEIGHBORS_STEPS = [5, 10, 15, 20, 30, 50, 100];
+export const MIN_DIST_STEPS    = [0.0, 0.05, 0.1, 0.25, 0.5, 1.0];
+export const MCS_STEPS         = [5, 10, 15, 20, 30, 50];
+export const MS_STEPS          = [1, 3, 5, 10, 15, 20];
+
+// ── Plotly layout constants ───────────────────────────────────────────────────
+// l+r = t+b = 120 → equal margins keep the axes box square
+export const MARGIN = { t: 30, r: 60, b: 90, l: 60 };
+
+export const AXIS_LABEL_FONT = {
+  family: "'JetBrains Mono', monospace",
+  size: 14,
+  color: '#515978',
+};
+
+export const TICK_FONT = {
+  family: "'JetBrains Mono', monospace",
+  size: 13,
+  color: '#8a94b2',
+};
+
+export const AXIS_BOX = {
+  showline: true, linecolor: '#000', linewidth: 1.5, mirror: true,
+  showgrid: false, zeroline: false,
+  ticks: 'outside', ticklen: 4, tickwidth: 1, tickcolor: '#c0c8d8',
+  tickfont: TICK_FONT, nticks: 5, tickformat: '.1f',
+};
+
+// ── Code-generation templates per dataset ────────────────────────────────────
+export const DATASET_CODE = {
+  iris: {
+    imports: 'from sklearn.datasets import load_iris',
+    load: 'data = load_iris()\nX = data.data',
+  },
+  digits: {
+    imports: 'from sklearn.datasets import load_digits',
+    load: 'data = load_digits()\nX = data.data',
+  },
+  swiss_roll: {
+    imports: 'from sklearn.datasets import make_swiss_roll',
+    load: 'X, _ = make_swiss_roll(n_samples=2000, random_state=42)',
+  },
+  breast_cancer: {
+    imports: 'from sklearn.datasets import load_breast_cancer',
+    load: 'data = load_breast_cancer()\nX = data.data',
+  },
+};

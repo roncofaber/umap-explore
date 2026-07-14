@@ -20,3 +20,8 @@ DATASETS_META = {
         'description': 'Clinical measurements from 569 breast biopsies labeled malignant or benign. From the UCI ML repository.',
     },
 }
+
+
+def make_key(n_neighbors, min_dist, n_components, metric, scale):
+    """Return the HDF5 group key for a given parameter combination."""
+    return f"{n_neighbors}_{min_dist}_{n_components}_{metric}_{scale}"

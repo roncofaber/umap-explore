@@ -2,7 +2,7 @@ import sys
 import subprocess
 import h5py
 import numpy as np
-from utils import make_key
+from datasets.meta import make_key
 
 
 def test_make_key_basic():

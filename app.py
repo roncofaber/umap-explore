@@ -10,8 +10,7 @@ import colorcet as cc
 import h5py
 import numpy as np
 import hdbscan as hdbscan_lib
-from datasets.meta import DATASETS_META
-from utils import make_key
+from datasets.meta import DATASETS_META, make_key
 
 
 def _label_colors(label_names: list | None) -> list | None:
