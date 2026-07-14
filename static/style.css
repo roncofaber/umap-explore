@@ -14,12 +14,11 @@
   --header:     #1c2033;
   --track:      #d4d9ec;
 
-  /* ── Type scale ──────────────────────── */
-  --font-2xs: 0.65rem;    /* dividers, ticks, tiny labels  */
-  --font-xs:  0.72rem;    /* descriptions, legend, loading */
-  --font-sm:  0.775rem;   /* param blocks, toggles, select */
-  --font-base: 0.825rem;  /* normal UI text                */
-  --font-lg:  0.9375rem;  /* header h1                     */
+  /* ── Type scale (4 categories) ──────── */
+  --font-footnote: 0.7rem;    /* ticks, dividers, status, tiny labels   */
+  --font-body:     0.8rem;    /* descriptions, legend, explainer text   */
+  --font-ui:       0.85rem;   /* controls, param blocks, buttons, code  */
+  --font-title:    1rem;      /* header h1                              */
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -47,7 +46,7 @@ header {
 }
 
 h1 {
-  font-size: var(--font-lg);
+  font-size: var(--font-title);
   font-weight: 700;
   color: #fff;
   letter-spacing: -0.015em;
@@ -55,7 +54,7 @@ h1 {
 
 .header-sub {
   font-family: 'JetBrains Mono', monospace;
-  font-size: var(--font-xs);
+  font-size: var(--font-footnote);
   color: rgba(255,255,255,0.28);
   letter-spacing: 0.01em;
   padding-top: 1px;
@@ -66,6 +65,7 @@ main {
   flex: 1;
   display: flex;
   overflow: hidden;
+  position: relative;
 }
 
 /* ── Controls panel ──────────────────────── */
@@ -79,7 +79,42 @@ main {
   display: flex;
   flex-direction: column;
   gap: 0.875rem;
+  transition: width 0.25s ease, padding 0.25s ease, min-width 0.25s ease;
+  overflow: hidden;
 }
+
+#controls.collapsed {
+  width: 0;
+  min-width: 0;
+  padding: 0;
+}
+
+/* ── Sidebar toggle ──────────────────────── */
+.sidebar-toggle {
+  position: absolute;
+  left: 290px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 50;
+  width: 20px;
+  height: 48px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-left: none;
+  border-radius: 0 6px 6px 0;
+  cursor: pointer;
+  color: var(--text-3);
+  font-size: var(--font-ui);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: left 0.25s ease, color 0.15s;
+  padding: 0;
+  line-height: 1;
+}
+
+.sidebar-toggle:hover { color: var(--accent); }
+.sidebar-toggle.collapsed { left: 0; }
 
 /* ── UMAP explainer ──────────────────────── */
 #umap-explainer {
@@ -91,7 +126,7 @@ main {
 
 #umap-explainer summary {
   cursor: pointer;
-  font-size: var(--font-sm);
+  font-size: var(--font-body);
   font-weight: 600;
   color: var(--text-2);
   padding: 0.55rem 0.75rem;
@@ -116,7 +151,7 @@ main {
 #umap-explainer[open] summary::before { transform: rotate(90deg); }
 
 #umap-explainer p {
-  font-size: var(--font-sm);
+  font-size: var(--font-body);
   line-height: 1.6;
   color: var(--text-2);
   padding: 0.625rem 0.75rem;
@@ -132,7 +167,7 @@ main {
 }
 
 .explainer-links a {
-  font-size: var(--font-xs);
+  font-size: var(--font-body);
   color: var(--accent);
   text-decoration: none;
   font-weight: 600;
@@ -140,55 +175,10 @@ main {
 
 .explainer-links a:hover { text-decoration: underline; }
 
-/* ── Sidebar collapse ────────────────────── */
-.sidebar-toggle {
-  position: absolute;
-  left: 290px;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 50;
-  width: 20px;
-  height: 48px;
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-left: none;
-  border-radius: 0 6px 6px 0;
-  cursor: pointer;
-  color: var(--text-3);
-  font-size: 0.8rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: left 0.25s ease, color 0.15s;
-  padding: 0;
-  line-height: 1;
-}
-
-.sidebar-toggle:hover { color: var(--accent); }
-
-main { position: relative; }
-
-#controls {
-  transition: width 0.25s ease, padding 0.25s ease, min-width 0.25s ease;
-  overflow: hidden;
-}
-
-#controls.collapsed {
-  width: 0;
-  min-width: 0;
-  padding: 0;
-}
-
-.sidebar-toggle.collapsed {
-  left: 0;
-}
-
-.sidebar-toggle { font-size: 0.85rem; }
-
 /* ── Dataset field ───────────────────────── */
 .field-label {
   display: block;
-  font-size: var(--font-2xs);
+  font-size: var(--font-footnote);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -204,7 +194,7 @@ select {
   background: var(--panel);
   color: var(--text-1);
   font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-  font-size: var(--font-base);
+  font-size: var(--font-ui);
   font-weight: 500;
   cursor: pointer;
   outline: none;
@@ -231,21 +221,21 @@ select:focus, select:hover { border-color: var(--accent); }
 
 .dataset-stats {
   font-family: 'JetBrains Mono', monospace;
-  font-size: var(--font-2xs);
+  font-size: var(--font-footnote);
   color: var(--text-3);
 }
 
 .dataset-stats .stat-sep { margin: 0 0.3em; }
 
 .dataset-desc {
-  font-size: var(--font-xs);
+  font-size: var(--font-body);
   color: var(--text-2);
   line-height: 1.5;
 }
 
 /* ── Parameters divider ──────────────────── */
 .params-divider {
-  font-size: var(--font-2xs);
+  font-size: var(--font-footnote);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.09em;
@@ -290,48 +280,49 @@ select:focus, select:hover { border-color: var(--accent); }
   background: var(--code-bg);
   border: 1px solid var(--border);
   border-radius: 6px;
-  padding: 0.375rem 0.625rem;
+  padding: 0.4rem 0.625rem;
   font-family: 'JetBrains Mono', monospace;
-  font-size: var(--font-sm);
+  font-size: var(--font-ui);
   line-height: 1;
   gap: 0;
+  cursor: default;
 }
 
 .pname { color: var(--accent); font-weight: 500; }
-.peq   { color: var(--text-3); padding: 0 0.18em; }
+.peq   { color: var(--text-3); padding: 0 0.18em; flex-shrink: 0; }
 .pval  { color: var(--green);  font-weight: 600; }
 
-/* Metric inline select */
+/* Inline select (metric, color_by) — fills remaining param-block width */
 .pval-wrap {
   display: inline-flex;
   align-items: center;
-  gap: 0.15em;
+  flex: 1;
+  min-width: 0;
   cursor: pointer;
 }
 
 .pval-select {
   border: none;
-  background: none;
+  background: var(--code-bg);
   color: var(--green);
   font-family: 'JetBrains Mono', monospace;
-  font-size: var(--font-sm);
+  font-size: var(--font-ui);
   font-weight: 600;
   cursor: pointer;
   outline: none;
-  padding: 0;
+  padding: 0 1.5em 0 0;
   -webkit-appearance: none;
   appearance: none;
-  text-decoration: underline dotted var(--green);
-  text-underline-offset: 2px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%231d7f45' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.1em center;
+  flex: 1;
+  width: 100%;
+  min-width: 0;
 }
 
-.pval-caret {
-  color: var(--green);
-  font-size: 0.6rem;
-  line-height: 1;
-  opacity: 0.7;
-  pointer-events: none;
-}
+/* hide the old manual caret — arrow is now in the background-image */
+.pval-caret { display: none; }
 
 /* Toggle inside param-block */
 .param-block .toggle-group {
@@ -342,12 +333,12 @@ select:focus, select:hover { border-color: var(--accent); }
 }
 
 .param-block .toggle {
-  padding: 0.1rem 0.45rem;
+  padding: 0.1rem 0.5rem;
   border: none;
   background: var(--panel);
   color: var(--text-3);
   font-family: 'JetBrains Mono', monospace;
-  font-size: var(--font-sm);
+  font-size: var(--font-ui);
   font-weight: 600;
   cursor: pointer;
   transition: background 0.12s, color 0.12s;
@@ -408,7 +399,7 @@ input[type="range"]::-moz-range-thumb {
   position: relative;
   height: 1.1rem;
   font-family: 'JetBrains Mono', monospace;
-  font-size: var(--font-2xs);
+  font-size: var(--font-footnote);
   color: var(--text-3);
   margin-top: 0.1rem;
   user-select: none;
@@ -422,7 +413,7 @@ input[type="range"]::-moz-range-thumb {
 
 /* ── Param description ───────────────────── */
 .param-description {
-  font-size: var(--font-xs);
+  font-size: var(--font-body);
   color: var(--text-3);
   line-height: 1.5;
 }
@@ -433,7 +424,7 @@ input[type="range"]::-moz-range-thumb {
   border: none;
   color: var(--text-3);
   font-family: 'JetBrains Mono', monospace;
-  font-size: var(--font-2xs);
+  font-size: var(--font-footnote);
   cursor: pointer;
   padding: 0;
   line-height: 1;
@@ -458,12 +449,33 @@ input[type="range"]::-moz-range-thumb {
   border-radius: 6px;
   color: var(--text-3);
   font-family: 'JetBrains Mono', monospace;
-  font-size: var(--font-sm);
+  font-size: var(--font-ui);
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 
 .action-btn:hover {
+  background: var(--code-bg);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ── Show code button ────────────────────── */
+.show-code-btn {
+  width: 100%;
+  padding: 0.5rem;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-3);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--font-ui);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  margin-top: 0.25rem;
+}
+
+.show-code-btn:hover {
   background: var(--code-bg);
   border-color: var(--accent);
   color: var(--accent);
@@ -478,7 +490,7 @@ input[type="range"]::-moz-range-thumb {
 .data-table {
   border-collapse: collapse;
   font-family: 'JetBrains Mono', monospace;
-  font-size: var(--font-xs);
+  font-size: var(--font-body);
   white-space: nowrap;
   width: 100%;
 }
@@ -514,7 +526,7 @@ input[type="range"]::-moz-range-thumb {
   padding: 0.375rem 1rem;
   text-align: center;
   font-family: 'JetBrains Mono', monospace;
-  font-size: var(--font-xs);
+  font-size: var(--font-footnote);
   color: rgba(255,255,255,0.28);
   border-top: 1px solid rgba(255,255,255,0.07);
   flex-shrink: 0;
@@ -526,7 +538,7 @@ input[type="range"]::-moz-range-thumb {
   color: #fff;
 }
 
-/* ── Code modal ──────────────────────────── */
+/* ── Code / data modals ──────────────────── */
 .code-modal {
   position: fixed;
   inset: 0;
@@ -558,7 +570,7 @@ input[type="range"]::-moz-range-thumb {
 
 .code-modal-title {
   font-family: 'JetBrains Mono', monospace;
-  font-size: var(--font-xs);
+  font-size: var(--font-footnote);
   color: rgba(255,255,255,0.35);
   letter-spacing: 0.04em;
 }
@@ -571,7 +583,7 @@ input[type="range"]::-moz-range-thumb {
   border-radius: 4px;
   color: rgba(255,255,255,0.55);
   font-family: 'JetBrains Mono', monospace;
-  font-size: var(--font-xs);
+  font-size: var(--font-footnote);
   padding: 0.2rem 0.6rem;
   cursor: pointer;
   transition: background 0.12s, color 0.12s;
@@ -584,7 +596,7 @@ input[type="range"]::-moz-range-thumb {
 
 .code-block {
   font-family: 'JetBrains Mono', monospace;
-  font-size: var(--font-sm);
+  font-size: var(--font-ui);
   line-height: 1.7;
   color: #e2e6f0;
   padding: 1.25rem 1.25rem 1.5rem;
@@ -617,13 +629,11 @@ input[type="range"]::-moz-range-thumb {
 /* ── Legend interactions ─────────────────── */
 .legend-item { cursor: pointer; transition: opacity 0.15s; }
 .legend-item.dimmed { opacity: 0.3; }
-
 #plot { cursor: crosshair; }
 
 /* ── Legend ──────────────────────────────── */
 #legend {
   position: absolute;
-  /* exact pixel position set by repositionLegend() in app.js */
   top: 0;
   right: 0;
   display: flex;
@@ -655,7 +665,7 @@ input[type="range"]::-moz-range-thumb {
 
 .legend-label {
   font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: var(--font-xs);
+  font-size: var(--font-body);
   color: var(--text-1);
   font-weight: 500;
   white-space: nowrap;
@@ -668,7 +678,7 @@ input[type="range"]::-moz-range-thumb {
   left: 50%;
   transform: translateX(-50%);
   font-family: 'JetBrains Mono', monospace;
-  font-size: var(--font-2xs);
+  font-size: var(--font-footnote);
   color: var(--text-3);
   white-space: nowrap;
   pointer-events: none;
@@ -685,11 +695,26 @@ input[type="range"]::-moz-range-thumb {
   color: rgba(255,255,255,0.65);
   padding: 0.25rem 0.6rem;
   border-radius: 4px;
-  font-size: var(--font-xs);
+  font-size: var(--font-footnote);
   font-family: 'JetBrains Mono', monospace;
   letter-spacing: 0.03em;
   z-index: 10;
 }
+
+/* ── Dataset info card ───────────────────── */
+.dataset-info {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.5rem 0.625rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+/* ── Show code button ────────────────────── */
+
+/* ── Explainer links ─────────────────────── */
 
 /* ── Reduced motion ──────────────────────── */
 @media (prefers-reduced-motion: reduce) {

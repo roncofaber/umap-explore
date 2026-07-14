@@ -227,7 +227,7 @@ function makeTrace(emb) {
 }
 
 const AXIS_LABEL_FONT = { family: "'JetBrains Mono', monospace", size: 14, color: '#515978' };
-const TICK_FONT      = { family: "'JetBrains Mono', monospace", size: 10, color: '#8a94b2' };
+const TICK_FONT      = { family: "'JetBrains Mono', monospace", size: 11, color: '#8a94b2' };
 const AXIS_BOX = {
   showline: true, linecolor: '#000', linewidth: 1.5, mirror: true,
   showgrid: false, zeroline: false,
