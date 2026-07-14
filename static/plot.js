@@ -57,17 +57,19 @@ export function makeTrace(emb) {
     ? emb.labels.map(v => `value: ${v.toFixed(2)}`)
     : emb.labels.map(l => emb.label_names[l]);
 
-  const marker  = { size: 5, opacity: 0.8 };
+  const marker  = { size: state.pointSize, opacity: state.pointOpacity };
   const dummies = [];
   const H = els.plot.offsetHeight || 700;
 
   if (state.tab === 'hdbscan' && state.clusterResult) {
     // ── HDBSCAN scatter: color by cluster ──────────────────────────────────
+    const NOISE_COLOR = '#1c2033';
     const { colors, labels, cluster_colors } = state.clusterResult;
+    const pointColors = labels.map((l, i) => l >= 0 ? colors[i] : NOISE_COLOR);
     const hl = state.highlightedCluster;
     marker.color = hl !== null
-      ? labels.map((l, i) => l === hl ? colors[i] : '#d0d5e8')
-      : colors;
+      ? labels.map((l, i) => l === hl ? pointColors[i] : '#d0d5e8')
+      : pointColors;
     hoverText.splice(0, hoverText.length,
       ...labels.map(l => l >= 0 ? `cluster ${l}` : 'noise'));
 
@@ -75,7 +77,7 @@ export function makeTrace(emb) {
     uniqueClusters.forEach((cl, i) =>
       dummies.push(legendEntry(`cluster ${cl}`, cluster_colors[i])));
     if (state.clusterResult.n_noise > 0)
-      dummies.push(legendEntry('noise', '#c0c8d8'));
+      dummies.push(legendEntry('noise', NOISE_COLOR));
 
   } else if (state.colorBy !== 'class') {
     // ── Color by feature: horizontal Viridis colorbar below ───────────────

@@ -54,4 +54,11 @@ export const els = {
   // Modals
   showCodeBtn:      q('show-code-btn'),
   viewDataBtn:      q('view-data-btn'),
+  // Plot settings
+  settingsBtn:      q('settings-btn'),
+  plotSettings:     q('plot-settings'),
+  psSize:           q('ps-size'),
+  psSizeVal:        q('ps-size-val'),
+  psOpacity:        q('ps-opacity'),
+  psOpacityVal:     q('ps-opacity-val'),
 };

@@ -208,11 +208,30 @@ async function init() {
   }
 }
 
+// ── Plot settings ─────────────────────────────────────────────────────────────
+function wireSettings() {
+  els.settingsBtn.addEventListener('click', () => {
+    els.plotSettings.hidden = !els.plotSettings.hidden;
+    els.settingsBtn.classList.toggle('active', !els.plotSettings.hidden);
+  });
+  els.psSize.addEventListener('input', () => {
+    state.pointSize = parseInt(els.psSize.value);
+    els.psSizeVal.textContent = state.pointSize;
+    rerenderColors();
+  });
+  els.psOpacity.addEventListener('input', () => {
+    state.pointOpacity = parseFloat(els.psOpacity.value);
+    els.psOpacityVal.textContent = Math.round(state.pointOpacity * 100) + '%';
+    rerenderColors();
+  });
+}
+
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 wireUmapControls();
 wirePlotCallbacks();
 initClusterControls();
 initCodeModal();
 wireGlobalKeys();
+wireSettings();
 initSidebarToggle(() => rerenderColors());
 init();

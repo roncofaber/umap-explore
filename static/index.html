@@ -238,9 +238,22 @@
 
       </div><!-- /tab-content-hdbscan -->
 
+      <div id="plot-settings" class="plot-settings" hidden>
+        <div class="ps-row">
+          <span class="ps-label">point size</span>
+          <input type="range" id="ps-size" min="2" max="15" step="1" value="5">
+          <span class="ps-val" id="ps-size-val">5</span>
+        </div>
+        <div class="ps-row">
+          <span class="ps-label">opacity</span>
+          <input type="range" id="ps-opacity" min="0.1" max="1" step="0.05" value="0.8">
+          <span class="ps-val" id="ps-opacity-val">80%</span>
+        </div>
+      </div>
       <div class="bottom-actions">
         <button id="show-code-btn" class="action-btn">{ } code</button>
         <button id="view-data-btn" class="action-btn">⊞ data</button>
+        <button id="settings-btn" class="action-btn" title="Plot style">⚙</button>
       </div>
 
     </aside>

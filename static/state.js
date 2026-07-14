@@ -21,6 +21,8 @@ export const state = {
   clusterView:              'scatter',    // 'scatter' | 'tree'
   clusterResult:            null,
   explainedVarianceRatio:   null,    // [pc1, pc2] from PCA, null otherwise
+  pointSize:                5,
+  pointOpacity:             0.8,
 };
 
 // Dataset metadata from /api/datasets (populated on init)

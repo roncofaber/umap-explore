@@ -583,6 +583,51 @@ input[type="range"]::-moz-range-thumb {
   color: var(--accent);
 }
 
+.action-btn.active {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ── Plot settings panel ─────────────────── */
+.plot-settings {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.5rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.plot-settings[hidden] { display: none; }
+
+.ps-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ps-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--font-body);
+  color: var(--text-3);
+  min-width: 8ch;
+  flex-shrink: 0;
+}
+
+.ps-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--font-body);
+  font-weight: 700;
+  color: var(--accent);
+  min-width: 3.5ch;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.ps-row input[type="range"] { flex: 1; }
+
 /* ── Data table ──────────────────────────── */
 .data-table-wrap {
   max-height: 70vh;
