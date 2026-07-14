@@ -152,7 +152,7 @@ export function setClusterView(view) {
   els.viewTree.classList.toggle('active', isTree);
   els.plot.closest('#plot-wrapper').hidden = isTree;
   els.treeWrapper.hidden = !isTree;
-  els.legend.hidden = isTree;   // hide the scatter legend in tree view
+  els.legend.style.display = isTree ? 'none' : '';   // hide scatter legend in tree view
   if (isTree) fetchTree();
 }
 
@@ -207,7 +207,7 @@ export function switchTab(tab) {
     els.viewTree.classList.remove('active');
     els.plot.closest('#plot-wrapper').hidden = false;
     els.treeWrapper.hidden = true;
-    els.legend.hidden = false;
+    els.legend.style.display = '';
     rerenderColors();
   }
 }
