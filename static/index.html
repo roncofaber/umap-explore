@@ -201,12 +201,12 @@
         <div class="control-group">
           <div class="param-header">
             <span>cluster_selection_epsilon</span>
-            <span class="param-value" id="cse-value">0</span>
-            <span class="param-q" data-tip="Distance threshold (same units as the metric). Clusters closer than ε are merged rather than split. In the tree, the dashed line marks λ = 1/ε. Set to 0 for standard HDBSCAN.">?</span>
+            <input type="number" id="cse-value" class="param-input" value="0" min="0" step="0.1">
+            <span class="param-q" data-tip="Distance threshold (same units as the metric). Clusters closer than ε are merged rather than split. In the tree, the dashed line marks λ = 1/ε. Set to 0 for standard HDBSCAN. Can exceed 1 for large-scale data or high-dimensional inputs.">?</span>
           </div>
-          <input type="range" id="cse-slider" min="0" max="4" step="1" value="0">
+          <input type="range" id="cse-slider" min="0" max="6" step="1" value="0">
           <div class="slider-ticks">
-            <span>0</span><span>.1</span><span>.25</span><span>.5</span><span>1</span>
+            <span>0</span><span>.1</span><span>.25</span><span>.5</span><span>1</span><span>2</span><span>5</span>
           </div>
         </div>
 

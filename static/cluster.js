@@ -251,7 +251,17 @@ export function initClusterControls() {
 
   els.cseSlider.addEventListener('input', () => {
     state.clusterSelectionEpsilon = CSE_STEPS[parseInt(els.cseSlider.value)];
-    els.cseValue.textContent = state.clusterSelectionEpsilon;
+    els.cseValue.value = state.clusterSelectionEpsilon;
+    scheduleCluster();
+  });
+
+  els.cseValue.addEventListener('change', () => {
+    const v = Math.max(0, parseFloat(els.cseValue.value) || 0);
+    state.clusterSelectionEpsilon = v;
+    els.cseValue.value = v;
+    const idx = CSE_STEPS.reduce((bi, s, i) =>
+      Math.abs(s - v) < Math.abs(CSE_STEPS[bi] - v) ? i : bi, 0);
+    els.cseSlider.value = idx;
     scheduleCluster();
   });
 
