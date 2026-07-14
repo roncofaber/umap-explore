@@ -111,7 +111,7 @@ els.sidebarToggle.addEventListener('click', () => {
     els.sidebarToggle.classList.toggle('collapsed', collapsed);
   }
   updateToggleLabel();
-  requestAnimationFrame(() => { Plotly.relayout(els.plot, {}); repositionLegend(); });
+  requestAnimationFrame(() => Plotly.relayout(els.plot, {}));
 });
 
 updateToggleLabel();
@@ -122,7 +122,6 @@ function rerenderColors() {
   if (!currentEmb) return;
   Plotly.react(els.plot, [makeTrace(currentEmb)], makeLayout(currentEmb));
   updateLegend(currentEmb);
-  requestAnimationFrame(repositionLegend);
 }
 
 // ── Slider tick positioning ───────────────────────────────────────────────────
@@ -177,17 +176,6 @@ function updateDatasetInfo() {
 
 // ── Legend ────────────────────────────────────────────────────────────────────
 
-function repositionLegend() {
-  if (!els.legend || !els.legend.children.length) return;
-  // .nsewdrag is Plotly's drag rect that exactly covers the axes box
-  const drag = els.plot.querySelector('.nsewdrag');
-  if (!drag) return;
-  const wrapper = els.plot.parentElement;          // #plot-wrapper, position:relative
-  const wRect   = wrapper.getBoundingClientRect();
-  const dRect   = drag.getBoundingClientRect();
-  els.legend.style.top   = Math.round(dRect.top   - wRect.top   + 8) + 'px';
-  els.legend.style.right = Math.round(wRect.right  - dRect.right + 8) + 'px';
-}
 
 function updateLegend(emb) {
   if (state.tab === 'hdbscan' && state.clusterResult) {
@@ -402,8 +390,7 @@ async function fetchAndRender() {
       await fetchAndCluster();
     } else {
       updateLegend(emb);
-      requestAnimationFrame(repositionLegend);
-    }
+      }
   } catch (e) {
     console.error('Failed to load embedding:', e);
   } finally {
