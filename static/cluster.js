@@ -1,6 +1,6 @@
 import { state } from './state.js';
 import { els } from './elements.js';
-import { MCS_STEPS, MS_STEPS, CSE_STEPS } from './constants.js';
+import { MCS_STEPS, MS_STEPS, CSE_STEPS, TICK_FONT, AXIS_LABEL_FONT } from './constants.js';
 import { fetchClusterResult } from './api.js';
 import { updateLegend, rerenderColors } from './legend.js';
 import { positionAllTicks, setLoading } from './ui.js';
@@ -9,10 +9,7 @@ import { positionAllTicks, setLoading } from './ui.js';
 function renderTreePlot(data) {
   const { bars, lines, selected_clusters, epsilon } = data;
 
-  const MONO = "'JetBrains Mono', monospace";
   const SANS = "'Plus Jakarta Sans', sans-serif";
-  const AXIS_FONT = { family: MONO, size: 13, color: '#515978' };
-  const TICK_FONT = { family: MONO, size: 11, color: '#8a94b2' };
 
   // Main bar trace — all bars, colored dark-to-light by cluster size
   const traces = [{
@@ -82,18 +79,20 @@ function renderTreePlot(data) {
   }
 
   Plotly.react(els.treeWrapper, traces, {
-    margin: { t: 10, r: 20, b: 60, l: 65 },
+    margin: { t: 20, r: 20, b: 70, l: 70 },
     paper_bgcolor: '#eef0f5', plot_bgcolor: '#eef0f5',
     bargap: 0,
     showlegend: selected_clusters.length > 0,
-    legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.22,
+    legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.18,
               font: { family: SANS, size: 12, color: '#515978' } },
     shapes, annotations,
     xaxis: { visible: false, showgrid: false, zeroline: false },
     yaxis: {
-      title: { text: 'λ  (1 / distance)', font: AXIS_FONT, standoff: 6 },
-      showgrid: false, zeroline: false, tickfont: TICK_FONT,
-      tickformat: '.2f',
+      title: { text: 'λ  (1 / distance)', font: AXIS_LABEL_FONT, standoff: 6 },
+      showgrid: false, zeroline: false,
+      showline: true, linecolor: '#000', linewidth: 1.5,
+      ticks: 'outside', ticklen: 4, tickwidth: 1, tickcolor: '#c0c8d8',
+      tickfont: TICK_FONT, tickformat: '.2f',
     },
   }, { responsive: true });
 
@@ -165,12 +164,6 @@ export async function fetchAndCluster() {
   try {
     const result = await fetchClusterResult();
     state.clusterResult = result;
-    const { n_clusters, n_noise } = result;
-    const total = state.clusterResult.labels.length;
-    const pct   = ((n_noise / total) * 100).toFixed(1);
-    els.clusterStat.textContent =
-      `${n_clusters} cluster${n_clusters !== 1 ? 's' : ''}  ·  ${n_noise} noise points (${pct}%)`;
-    els.clusterStat.hidden = false;
     rerenderColors();
     if (state.clusterView === 'tree') fetchTree();
   } catch (e) {
@@ -195,14 +188,11 @@ export function switchTab(tab) {
   els.contentHdbscan.hidden = tab !== 'hdbscan';
 
   if (tab === 'hdbscan') {
-    els.viewToggle.classList.add('visible');
     requestAnimationFrame(positionAllTicks);
     fetchAndCluster();
   } else {
-    els.viewToggle.classList.remove('visible');
     state.clusterView = 'scatter';
     state.clusterResult = null;
-    els.clusterStat.hidden = true;
     els.viewScatter.classList.add('active');
     els.viewTree.classList.remove('active');
     els.plot.closest('#plot-wrapper').hidden = false;
