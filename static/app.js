@@ -237,7 +237,7 @@ const AXIS_BOX = {
 
 function makeLayout(emb) {
   return {
-    margin: { t: 30, r: 40, b: 65, l: 70 },
+    margin: { t: 30, r: 80, b: 65, l: 70 },
     paper_bgcolor: '#eef0f5',
     plot_bgcolor: '#eef0f5',
     showlegend: false,
