@@ -41,40 +41,58 @@ function renderTreePlot(treeData) {
   const nodeMap = Object.fromEntries(nodes.map(n => [n.id, n]));
 
   const traces = [];
+  const shapes = [];
 
-  // One scatter trace per cluster (rectangle drawn via fill='toself')
+  // Build children map for connector logic
+  const childrenOf = {};
+  nodes.forEach(n => {
+    if (n.parent !== -1) (childrenOf[n.parent] = childrenOf[n.parent] || []).push(n.id);
+  });
+  const nodeMap2 = Object.fromEntries(nodes.map(n => [n.id, n]));
+
+  // One scatter trace per cluster (rectangle via fill='toself')
   nodes.forEach(node => {
     const [y0, y1] = layout[node.id] || [0, node.size];
     const { birth_lambda: x0, death_lambda: x1, selected, label, color, size } = node;
-    const alpha = selected ? 'cc' : '55';
 
+    // Selected clusters: opaque fill. Unselected: outline only (no fill).
     traces.push({
       type: 'scatter',
       x: [x0, x1, x1, x0, x0],
       y: [y0, y0, y1, y1, y0],
-      fill: 'toself',
-      fillcolor: color + alpha,
-      line: { color, width: selected ? 1.5 : 0.5 },
+      fill: selected ? 'toself' : 'none',
+      fillcolor: selected ? color + 'bb' : 'transparent',
+      line: { color: selected ? color : '#c0c8d8', width: selected ? 1.5 : 0.75 },
       mode: 'lines',
       customdata: [{ label, selected, size }],
       hovertemplate: selected
         ? `<b>cluster ${label}</b><br>${size} points<br>λ: ${x0.toFixed(3)} → ${x1.toFixed(3)}<extra></extra>`
-        : `internal node<br>${size} points<extra></extra>`,
+        : `internal<br>${size} points<extra></extra>`,
       showlegend: false,
     });
   });
 
-  // Vertical connector lines from parent split to each child
-  const shapes = [];
+  // Connector: at each split point, draw a vertical line spanning all siblings
+  // (joins the y-edges of the sibling cluster bars at their shared birth_lambda)
+  const processedSplits = new Set();
   nodes.forEach(node => {
-    if (node.parent === -1 || !layout[node.parent] || !layout[node.id]) return;
-    const [py0, py1] = layout[node.parent];
-    const [cy0, cy1] = layout[node.id];
+    if (node.parent === -1) return;
+    const key = `${node.parent}_${node.birth_lambda.toFixed(6)}`;
+    if (processedSplits.has(key)) return;
+    processedSplits.add(key);
+
+    const siblings = (childrenOf[node.parent] || [])
+      .filter(id => nodeMap2[id] && Math.abs(nodeMap2[id].birth_lambda - node.birth_lambda) < 1e-9);
+    if (siblings.length < 2) return;
+
+    const ys = siblings.flatMap(id => layout[id] || []);
+    const yMin = Math.min(...ys);
+    const yMax = Math.max(...ys);
     shapes.push({
       type: 'line',
       x0: node.birth_lambda, x1: node.birth_lambda,
-      y0: (py0 + py1) / 2, y1: (cy0 + cy1) / 2,
-      line: { color: '#8a94b2', width: 0.8 },
+      y0: yMin, y1: yMax,
+      line: { color: '#8a94b2', width: 1 },
       layer: 'below',
     });
   });
@@ -90,18 +108,34 @@ function renderTreePlot(treeData) {
                         font: { color: '#e05252', size: 11, family: "'JetBrains Mono', monospace" } });
   }
 
+  // Legend entries for selected clusters
+  nodes.filter(n => n.selected).forEach(n => {
+    traces.push({
+      type: 'scatter', x: [null], y: [null], mode: 'markers',
+      marker: { color: n.color, size: 10, symbol: 'square' },
+      name: `cluster ${n.label}`, showlegend: true,
+    });
+  });
+
   const plotLayout = {
     margin: { t: 20, r: 20, b: 55, l: 60 },
     paper_bgcolor: '#eef0f5', plot_bgcolor: '#eef0f5',
-    showlegend: false, shapes, annotations,
-    xaxis: { title: { text: 'λ  (1 / distance)',
-                       font: { family: "'JetBrains Mono', monospace", size: 13, color: '#515978' } },
-             showgrid: false, zeroline: false,
-             tickfont: { family: "'JetBrains Mono', monospace", size: 11, color: '#8a94b2' } },
-    yaxis: { title: { text: 'cluster size',
-                       font: { family: "'JetBrains Mono', monospace", size: 13, color: '#515978' } },
-             showgrid: false, zeroline: false,
-             tickfont: { family: "'JetBrains Mono', monospace", size: 11, color: '#8a94b2' } },
+    showlegend: true,
+    legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.18,
+              font: { family: "'Plus Jakarta Sans', sans-serif", size: 12, color: '#515978' } },
+    shapes, annotations,
+    xaxis: {
+      title: { text: 'λ  (1 / distance)',
+               font: { family: "'JetBrains Mono', monospace", size: 13, color: '#515978' } },
+      showgrid: false, zeroline: false, rangemode: 'tozero',
+      tickfont: { family: "'JetBrains Mono', monospace", size: 11, color: '#8a94b2' },
+    },
+    yaxis: {
+      title: { text: 'data points',
+               font: { family: "'JetBrains Mono', monospace", size: 13, color: '#515978' } },
+      showgrid: false, zeroline: false,
+      tickfont: { family: "'JetBrains Mono', monospace", size: 11, color: '#8a94b2' },
+    },
   };
 
   Plotly.react(els.treeWrapper, traces, plotLayout, { responsive: true });

@@ -232,7 +232,9 @@ def get_cluster_tree(
                               'birth_lambda': float(row['lambda_val']),
                               'size': int(row['child_size']), 'death_lambda': 0.0}
 
-    for _, row in tree_df.iterrows():
+    # death_lambda = max lambda where a CLUSTER child (size > 1) branches off,
+    # not single-point drops — otherwise parent bars extend too far right.
+    for _, row in tree_df[tree_df['child_size'] > 1].iterrows():
         pid = int(row['parent'])
         if pid in node_map:
             node_map[pid]['death_lambda'] = max(
