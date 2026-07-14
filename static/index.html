@@ -84,10 +84,8 @@
           <div class="control-group">
             <div class="param-header">
               <span>n_neighbors</span>
+              <span class="param-value" id="n-neighbors-value">15</span>
               <span class="param-q" data-tip="How many nearby points UMAP considers when learning data structure. Low values capture fine local detail; high values reveal the global shape.">?</span>
-            </div>
-            <div class="param-block">
-              <span class="pname">n_neighbors</span><span class="peq"> = </span><span class="pval" id="n-neighbors-value">15</span>
             </div>
             <input type="range" id="n-neighbors-slider" min="0" max="6" step="1" value="2">
             <div class="slider-ticks">
@@ -98,10 +96,8 @@
           <div class="control-group">
             <div class="param-header">
               <span>min_dist</span>
+              <span class="param-value" id="min-dist-value">0.1</span>
               <span class="param-q" data-tip="Minimum distance between points in the layout. Lower values pack clusters tightly; higher values spread them out more evenly.">?</span>
-            </div>
-            <div class="param-block">
-              <span class="pname">min_dist</span><span class="peq"> = </span><span class="pval" id="min-dist-value">0.1</span>
             </div>
             <input type="range" id="min-dist-slider" min="0" max="5" step="1" value="2">
             <div class="slider-ticks">
@@ -167,11 +163,8 @@
         <div class="control-group">
           <div class="param-header">
             <span>min_cluster_size</span>
+            <input type="number" id="mcs-value" class="param-input" value="15" min="2" max="500" step="1">
             <span class="param-q" data-tip="The minimum number of points to form a cluster. This is the primary parameter — set it to the smallest group size you consider meaningful.">?</span>
-          </div>
-          <div class="param-block">
-            <span class="pname">min_cluster_size</span><span class="peq"> = </span>
-            <input type="number" id="mcs-value" class="pval-input" value="15" min="2" max="500" step="1">
           </div>
           <input type="range" id="mcs-slider" min="0" max="5" step="1" value="2">
           <div class="slider-ticks">
@@ -182,11 +175,8 @@
         <div class="control-group">
           <div class="param-header">
             <span>min_samples</span>
+            <input type="number" id="ms-value" class="param-input" value="5" min="1" max="200" step="1">
             <span class="param-q" data-tip="Controls how conservative clustering is. Larger values declare more points as noise and restrict clusters to denser regions. Defaults to min_cluster_size if not set.">?</span>
-          </div>
-          <div class="param-block">
-            <span class="pname">min_samples</span><span class="peq"> = </span>
-            <input type="number" id="ms-value" class="pval-input" value="5" min="1" max="200" step="1">
           </div>
           <input type="range" id="ms-slider" min="0" max="5" step="1" value="2">
           <div class="slider-ticks">
