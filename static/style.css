@@ -725,7 +725,7 @@ input[type="range"]::-moz-range-thumb {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
   overflow: hidden;
   position: relative;
 }
@@ -772,6 +772,8 @@ input[type="range"]::-moz-range-thumb {
   max-width: 900px;
   height: min(calc(100svh - 48px - 3rem), 500px);
 }
+
+#tree-wrapper[hidden] { display: none; }  /* prevent height from leaking into flex layout */
 
 /* ── Legend interactions ─────────────────── */
 .legend-item { cursor: pointer; transition: opacity 0.15s; }
