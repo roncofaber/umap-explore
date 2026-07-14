@@ -668,6 +668,32 @@ copyCodeBtn.addEventListener('click', () => {
   });
 });
 
+// ── Param tooltips ────────────────────────────────────────────────────────────
+
+function initTooltips() {
+  let tip = null;
+
+  document.querySelectorAll('.param-q').forEach(el => {
+    el.addEventListener('mouseenter', () => {
+      if (tip) tip.remove();
+      tip = document.createElement('div');
+      tip.className = 'param-tip';
+      tip.textContent = el.dataset.tip;
+      document.body.appendChild(tip);
+
+      const r  = el.getBoundingClientRect();
+      const tw = tip.offsetWidth;
+      const th = tip.offsetHeight;
+      const top  = r.top - th - 8;
+      const left = Math.max(8, Math.min(r.left + r.width / 2 - tw / 2, window.innerWidth - tw - 8));
+      tip.style.top  = (top < 8 ? r.bottom + 8 : top) + 'px';
+      tip.style.left = left + 'px';
+    });
+
+    el.addEventListener('mouseleave', () => { if (tip) { tip.remove(); tip = null; } });
+  });
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 
 async function init() {
@@ -693,6 +719,7 @@ async function init() {
       fetchAndRender();
     }
     requestAnimationFrame(positionAllTicks);
+    initTooltips();
   } catch (e) {
     console.error('Failed to load datasets:', e);
     els.loading.textContent = 'Failed to connect to server.';

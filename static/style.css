@@ -421,18 +421,59 @@ input[type="range"]::-moz-range-thumb {
 /* ── Reset button ────────────────────────── */
 .reset-btn {
   background: none;
-  border: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
   color: var(--text-3);
   font-family: 'JetBrains Mono', monospace;
-  font-size: var(--font-footnote);
+  font-size: var(--font-body);
   cursor: pointer;
-  padding: 0;
-  line-height: 1;
-  transition: color 0.15s;
+  padding: 0.15rem 0.45rem;
+  line-height: 1.4;
+  transition: color 0.15s, border-color 0.15s;
   margin-left: auto;
+  flex-shrink: 0;
 }
 
-.reset-btn:hover { color: var(--accent); }
+.reset-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+/* ── Param ? tooltip icon ─────────────────── */
+.param-q {
+  margin-left: 0.4rem;
+  flex-shrink: 0;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--text-3);
+  color: #fff;
+  font-size: 0.6rem;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: help;
+  line-height: 1;
+  transition: background 0.15s;
+  user-select: none;
+}
+
+.param-q:hover { background: var(--accent); }
+
+/* ── Tooltip bubble (created by JS at body level) */
+.param-tip {
+  position: fixed;
+  background: var(--header);
+  color: #dde3f0;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: var(--font-body);
+  line-height: 1.55;
+  padding: 0.55rem 0.75rem;
+  border-radius: 7px;
+  max-width: 230px;
+  z-index: 9999;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+  pointer-events: none;
+}
 
 /* ── Bottom action buttons ───────────────── */
 .bottom-actions {

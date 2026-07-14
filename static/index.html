@@ -59,8 +59,8 @@
             <button id="scale-on" class="toggle active">True</button>
             <button id="scale-off" class="toggle">False</button>
           </div>
+          <span class="param-q" data-tip="Normalize each feature to zero mean and unit variance before embedding. Disable to see the effect of raw feature scales on the projection.">?</span>
         </div>
-        <p class="param-description">Normalize each feature to zero mean and unit variance before embedding. Disable to see the effect of raw feature scales on the projection.</p>
       </div>
 
       <div id="umap-params">
@@ -72,23 +72,23 @@
         <div class="control-group">
           <div class="param-block">
             <span class="pname">n_neighbors</span><span class="peq"> = </span><span class="pval" id="n-neighbors-value">15</span>
+            <span class="param-q" data-tip="How many nearby points UMAP considers when learning data structure. Low values capture fine local detail; high values reveal the global shape.">?</span>
           </div>
           <input type="range" id="n-neighbors-slider" min="0" max="6" step="1" value="2">
           <div class="slider-ticks">
             <span>5</span><span>10</span><span>15</span><span>20</span><span>30</span><span>50</span><span>100</span>
           </div>
-          <p class="param-description">How many nearby points UMAP considers when learning data structure. Low values capture fine local detail; high values reveal the global shape.</p>
         </div>
 
         <div class="control-group">
           <div class="param-block">
             <span class="pname">min_dist</span><span class="peq"> = </span><span class="pval" id="min-dist-value">0.1</span>
+            <span class="param-q" data-tip="Minimum distance between points in the layout. Lower values pack clusters tightly; higher values spread them out more evenly.">?</span>
           </div>
           <input type="range" id="min-dist-slider" min="0" max="5" step="1" value="2">
           <div class="slider-ticks">
             <span>0</span><span>.05</span><span>.1</span><span>.25</span><span>.5</span><span>1</span>
           </div>
-          <p class="param-description">Minimum distance between points in the layout. Lower values pack clusters tightly; higher values spread them out more evenly.</p>
         </div>
 
         <div class="control-group">
@@ -103,8 +103,8 @@
               </select>
               <span class="pval-caret">▾</span>
             </span>
+            <span class="param-q" data-tip="How distances between points are measured in the original space. Different metrics can reveal different structure in your data.">?</span>
           </div>
-          <p class="param-description">How distances between points are measured in the original space. Different metrics can reveal different structure in your data.</p>
         </div>
       </div>
 
@@ -117,8 +117,8 @@
             </select>
             <span class="pval-caret">▾</span>
           </span>
+          <span class="param-q" data-tip="Color points by class label or by the value of any individual feature.">?</span>
         </div>
-        <p class="param-description">Color points by class label or by the value of any individual feature.</p>
       </div>
 
       <div class="bottom-actions">
