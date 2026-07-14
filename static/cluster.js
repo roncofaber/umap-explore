@@ -50,49 +50,60 @@ function renderTreePlot(treeData) {
   });
   const nodeMap2 = Object.fromEntries(nodes.map(n => [n.id, n]));
 
-  // One scatter trace per cluster (rectangle via fill='toself')
-  nodes.forEach(node => {
+  // Draw ONLY selected cluster bars (filled rectangles).
+  // Internal/unselected nodes are omitted — they create visual noise.
+  nodes.filter(n => n.selected).forEach(node => {
     const [y0, y1] = layout[node.id] || [0, node.size];
-    const { birth_lambda: x0, death_lambda: x1, selected, label, color, size } = node;
-
-    // Selected clusters: opaque fill. Unselected: outline only (no fill).
+    const { birth_lambda: x0, death_lambda: x1, label, color, size } = node;
     traces.push({
       type: 'scatter',
       x: [x0, x1, x1, x0, x0],
       y: [y0, y0, y1, y1, y0],
-      fill: selected ? 'toself' : 'none',
-      fillcolor: selected ? color + 'bb' : 'transparent',
-      line: { color: selected ? color : '#c0c8d8', width: selected ? 1.5 : 0.75 },
+      fill: 'toself',
+      fillcolor: color + 'cc',
+      line: { color, width: 1.5 },
       mode: 'lines',
-      customdata: [{ label, selected, size }],
-      hovertemplate: selected
-        ? `<b>cluster ${label}</b><br>${size} points<br>λ: ${x0.toFixed(3)} → ${x1.toFixed(3)}<extra></extra>`
-        : `internal<br>${size} points<extra></extra>`,
+      customdata: [{ label, selected: true, size }],
+      hovertemplate:
+        `<b>cluster ${label}</b><br>${size} points<br>λ: ${x0.toFixed(3)} → ${x1.toFixed(3)}<extra></extra>`,
       showlegend: false,
     });
   });
 
-  // Connector: at each split point, draw a vertical line spanning all siblings
-  // (joins the y-edges of the sibling cluster bars at their shared birth_lambda)
-  const processedSplits = new Set();
-  nodes.forEach(node => {
-    if (node.parent === -1) return;
-    const key = `${node.parent}_${node.birth_lambda.toFixed(6)}`;
-    if (processedSplits.has(key)) return;
-    processedSplits.add(key);
+  // Vertical connector lines: at each split lambda, connect all selected sibling clusters.
+  // Walk up the tree from each selected cluster to find the nearest split that
+  // connects to another selected cluster.
+  const selectedSet = new Set(nodes.filter(n => n.selected).map(n => n.id));
 
-    const siblings = (childrenOf[node.parent] || [])
-      .filter(id => nodeMap2[id] && Math.abs(nodeMap2[id].birth_lambda - node.birth_lambda) < 1e-9);
-    if (siblings.length < 2) return;
+  // Build ancestor map for quick lookup
+  const parentOf = Object.fromEntries(nodes.map(n => [n.id, n.parent]));
 
-    const ys = siblings.flatMap(id => layout[id] || []);
-    const yMin = Math.min(...ys);
-    const yMax = Math.max(...ys);
+  function nearestSelectedAncestor(id) {
+    let cur = parentOf[id];
+    while (cur !== undefined && cur !== -1) {
+      if (selectedSet.has(cur)) return cur;
+      cur = parentOf[cur];
+    }
+    return null;
+  }
+
+  // Group selected clusters by their nearest common split lambda
+  const connectors = {};  // splitLambda -> [y-positions of clusters]
+  nodes.filter(n => n.selected).forEach(node => {
+    const splitLambda = node.birth_lambda.toFixed(6);
+    if (!connectors[splitLambda]) connectors[splitLambda] = [];
+    const [y0, y1] = layout[node.id] || [0, node.size];
+    connectors[splitLambda].push(y0, y1);
+  });
+
+  Object.entries(connectors).forEach(([lStr, ys]) => {
+    if (ys.length < 4) return;  // need at least 2 clusters (4 y-values)
+    const lam = parseFloat(lStr);
     shapes.push({
       type: 'line',
-      x0: node.birth_lambda, x1: node.birth_lambda,
-      y0: yMin, y1: yMax,
-      line: { color: '#8a94b2', width: 1 },
+      x0: lam, x1: lam,
+      y0: Math.min(...ys), y1: Math.max(...ys),
+      line: { color: '#8a94b2', width: 1.2 },
       layer: 'below',
     });
   });
