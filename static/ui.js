@@ -3,6 +3,14 @@ import { els } from './elements.js';
 import { ensureFeatureData } from './api.js';
 import { rerenderColors } from './legend.js';
 
+// ── Loading indicator ────────────────────────────────────────────────────────
+export function setLoading(message = null) {
+  const active = message !== null;
+  els.loading.style.display    = active ? 'block' : 'none';
+  els.loadingMsg.style.display = active ? 'block' : 'none';
+  if (active) els.loadingMsg.textContent = message;
+}
+
 // ── Param status bar ──────────────────────────────────────────────────────────
 export function updateParamStatus() {
   if (!els.paramStatus) return;

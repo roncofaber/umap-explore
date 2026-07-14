@@ -17,6 +17,7 @@ export const state = {
   clusterSelectionMethod:   'eom',
   clusterSelectionEpsilon:  0.0,
   allowSingleCluster:       false,
+  clusterOn:                'projection', // 'projection' | 'data'
   clusterResult:            null,
   explainedVarianceRatio:   null,    // [pc1, pc2] from PCA, null otherwise
 };

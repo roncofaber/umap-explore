@@ -792,26 +792,54 @@ input[type="range"]::-moz-range-thumb {
   user-select: none;
 }
 
-/* ── Loading pill ────────────────────────── */
+/* ── Loading progress bar ────────────────── */
 #loading {
   display: none;
   position: absolute;
-  top: 0.75rem;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  z-index: 20;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+#loading::after {
+  content: '';
+  position: absolute;
+  top: 0; height: 100%;
+  left: -50%; width: 50%;
+  background: var(--accent);
+  border-radius: 0 2px 2px 0;
+  animation: loading-sweep 1s ease-in-out infinite;
+}
+
+@keyframes loading-sweep {
+  0%   { left: -50%; }
+  100% { left: 110%; }
+}
+
+/* ── Loading message ─────────────────────── */
+#loading-msg {
+  display: none;
+  position: absolute;
+  top: 0.625rem;
   right: 0.75rem;
-  background: var(--header);
-  color: rgba(255,255,255,0.65);
-  padding: 0.25rem 0.6rem;
-  border-radius: var(--radius-sm);
-  font-size: var(--font-footnote);
   font-family: 'JetBrains Mono', monospace;
-  letter-spacing: 0.03em;
+  font-size: var(--font-footnote);
+  color: var(--text-2);
+  background: rgba(238, 240, 245, 0.92);
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
   z-index: 10;
+  backdrop-filter: blur(4px);
 }
 
 /* ── Reduced motion ──────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   input[type="range"]::-webkit-slider-thumb { transition: none; }
   .section-explainer summary::before { transition: none; }
+  #loading::after { animation: none; width: 100%; left: 0; }
 }
 
 /* ── Mobile / narrow screens ─────────────── */

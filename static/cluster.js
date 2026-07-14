@@ -3,11 +3,14 @@ import { els } from './elements.js';
 import { MCS_STEPS, MS_STEPS, CSE_STEPS } from './constants.js';
 import { fetchClusterResult } from './api.js';
 import { updateLegend, rerenderColors } from './legend.js';
-import { positionAllTicks } from './ui.js';
+import { positionAllTicks, setLoading } from './ui.js';
 
 export async function fetchAndCluster() {
   if (!state.dataset) return;
-  els.loading.style.display = 'block';
+  const msg = state.clusterOn === 'data'
+    ? 'clustering high-dimensional data…'
+    : 'clustering…';
+  setLoading(msg);
   try {
     const result = await fetchClusterResult();
     state.clusterResult = result;
@@ -21,7 +24,7 @@ export async function fetchAndCluster() {
   } catch (e) {
     console.error('Clustering failed:', e);
   } finally {
-    els.loading.style.display = 'none';
+    setLoading(null);
   }
 }
 
@@ -114,6 +117,20 @@ export function initClusterControls() {
     if (state.allowSingleCluster) return;
     state.allowSingleCluster = true;
     els.ascTrue.classList.add('active'); els.ascFalse.classList.remove('active');
+    fetchAndCluster();
+  });
+
+  els.coProjection.addEventListener('click', () => {
+    if (state.clusterOn === 'projection') return;
+    state.clusterOn = 'projection';
+    els.coProjection.classList.add('active'); els.coData.classList.remove('active');
+    fetchAndCluster();
+  });
+
+  els.coData.addEventListener('click', () => {
+    if (state.clusterOn === 'data') return;
+    state.clusterOn = 'data';
+    els.coData.classList.add('active'); els.coProjection.classList.remove('active');
     fetchAndCluster();
   });
 }

@@ -8,12 +8,12 @@ import { fetchAndCluster, switchTab, initClusterControls } from './cluster.js';
 import { initCodeModal, initDataModal } from './modals.js';
 import {
   updateParamStatus, updateDatasetInfo, updateColorByOptions, onColorByChange,
-  initSidebarToggle, positionAllTicks, initTooltips,
+  initSidebarToggle, positionAllTicks, initTooltips, setLoading,
 } from './ui.js';
 
 // ── Fetch + render orchestrator ───────────────────────────────────────────────
 async function fetchAndRender() {
-  els.loading.style.display = 'block';
+  setLoading('computing…');
   updateParamStatus();
   try {
     const emb = await fetchEmbedding();
@@ -27,7 +27,7 @@ async function fetchAndRender() {
   } catch (e) {
     console.error('Failed to load embedding:', e);
   } finally {
-    els.loading.style.display = 'none';
+    setLoading(null);
   }
 }
 

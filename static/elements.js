@@ -39,11 +39,14 @@ export const els = {
   cseValue:         q('cse-value'),
   ascFalse:         q('asc-false'),
   ascTrue:          q('asc-true'),
+  coProjection:     q('co-projection'),
+  coData:           q('co-data'),
   clusterStat:      q('cluster-stat'),
   // Plot
   plot:             q('plot'),
   legend:           q('legend'),
   loading:          q('loading'),
+  loadingMsg:       q('loading-msg'),
   paramStatus:      q('param-status'),
   // Sidebar
   sidebarToggle:    q('sidebar-toggle'),

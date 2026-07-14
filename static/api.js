@@ -1,5 +1,6 @@
 import { state, cachedData } from './state.js';
 import { els } from './elements.js';
+import { setLoading } from './ui.js';
 
 export async function fetchEmbedding() {
   const params = new URLSearchParams({
@@ -28,6 +29,7 @@ export async function fetchClusterResult() {
     cluster_selection_method:   state.clusterSelectionMethod,
     cluster_selection_epsilon:  state.clusterSelectionEpsilon,
     allow_single_cluster:       state.allowSingleCluster,
+    cluster_on:                 state.clusterOn,
   });
   const resp = await fetch(`/api/cluster/${state.dataset}?${params}`);
   if (!resp.ok) throw new Error(`API error ${resp.status}`);
@@ -37,13 +39,13 @@ export async function fetchClusterResult() {
 export async function ensureFeatureData() {
   const key = `${state.dataset}_${state.scale}`;
   if (cachedData[key]) return cachedData[key];
-  els.loading.style.display = 'block';
+  setLoading('loading feature data…');
   try {
     const resp = await fetch(`/api/data/${state.dataset}?scale=${state.scale}`);
     if (!resp.ok) return null;
     cachedData[key] = await resp.json();
     return cachedData[key];
   } finally {
-    els.loading.style.display = 'none';
+    setLoading(null);
   }
 }

@@ -114,6 +114,7 @@ def get_cluster(
     cluster_selection_method: Literal['eom', 'leaf'] = Query('eom'),
     cluster_selection_epsilon: float = Query(0.0, ge=0.0),
     allow_single_cluster: bool = Query(False),
+    cluster_on: Literal['projection', 'data'] = Query('projection'),
 ):
     if not re.match(r'^[a-zA-Z0-9_]+$', dataset_name):
         raise HTTPException(status_code=400, detail="Invalid dataset name")
@@ -122,14 +123,23 @@ def get_cluster(
     path = _h5(dataset_name)
     if not path.exists():
         raise HTTPException(status_code=404, detail=f"No embeddings for '{dataset_name}'")
-    key = f"pca_{n_components}_{scale}" if method == 'pca' else make_key(n_neighbors, min_dist, n_components, metric, scale)
-    with h5py.File(path, 'r') as f:
-        if key not in f:
-            raise HTTPException(status_code=404, detail=f"No embedding for key '{key}'")
-        x = f[key]['x'][()]
-        y = f[key]['y'][()]
 
-    coords = np.column_stack([x, y])
+    if cluster_on == 'data':
+        with h5py.File(path, 'r') as f:
+            m = f['_meta']
+            if 'X_raw' not in m:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Feature data not available — run: python precompute.py --action add-features",
+                )
+            X_key = 'X_scaled' if scale == 'scaled' else 'X_raw'
+            coords = m[X_key][()]
+    else:
+        key = f"pca_{n_components}_{scale}" if method == 'pca' else make_key(n_neighbors, min_dist, n_components, metric, scale)
+        with h5py.File(path, 'r') as f:
+            if key not in f:
+                raise HTTPException(status_code=404, detail=f"No embedding for key '{key}'")
+            coords = np.column_stack([f[key]['x'][()], f[key]['y'][()]])
     clusterer = hdbscan_lib.HDBSCAN(
         min_cluster_size=min_cluster_size,
         min_samples=min_samples,
