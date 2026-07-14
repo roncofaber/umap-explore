@@ -744,15 +744,13 @@ input[type="range"]::-moz-range-thumb {
   justify-content: flex-start;
   overflow: hidden;
   position: relative;
-  padding: 0.5rem 0.5rem 0;
-  gap: 0.25rem;
 }
 
 #plot-wrapper {
   position: relative;
   aspect-ratio: 1;
-  /* constrain width so height (= width) fits within the viewport minus header + legend */
-  width: min(100%, calc(100svh - 48px - 4rem));
+  /* fill available width up to max-width; calc prevents height overflow */
+  width: min(100%, calc(100svh - 48px - 3rem));
   max-width: 900px;
 }
 
