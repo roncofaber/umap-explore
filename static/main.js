@@ -124,7 +124,13 @@ function wireUmapControls() {
 }
 
 function wirePlotCallbacks() {
+  function clearHighlights() {
+    if (state.highlightedLabel   !== null) { state.highlightedLabel   = null; rerenderColors(); }
+    if (state.highlightedCluster !== null) { state.highlightedCluster = null; rerenderColors(); }
+  }
+
   setPlotCallbacks(
+    // plotly_click — point in scatter
     (data) => {
       if (!data.points.length) return;
       const idx = data.points[0].pointIndex;
@@ -136,10 +142,25 @@ function wirePlotCallbacks() {
       if (!emb || emb.label_names === null || state.colorBy !== 'class') return;
       toggleHighlight(emb.labels[idx]);
     },
-    () => {
-      if (state.highlightedLabel   !== null) { state.highlightedLabel   = null; rerenderColors(); }
-      if (state.highlightedCluster !== null) { state.highlightedCluster = null; rerenderColors(); }
+    // plotly_doubleclick — clear highlight
+    clearHighlights,
+    // plotly_legendclick — legend entry clicked
+    // Dummy traces start at curveNumber=1; curveNumber-1 = class/cluster index.
+    (data) => {
+      const dummyIdx = data.curveNumber - 1;
+      if (dummyIdx < 0) return; // main trace, no legend entry
+      if (state.tab === 'hdbscan' && state.clusterResult) {
+        const uniqueClusters = [...new Set(
+          state.clusterResult.labels.filter(l => l >= 0)
+        )].sort((a, b) => a - b);
+        const label = dummyIdx < uniqueClusters.length ? uniqueClusters[dummyIdx] : -1;
+        toggleClusterHighlight(label);
+      } else if (state.colorBy === 'class') {
+        toggleHighlight(dummyIdx);
+      }
     },
+    // plotly_legenddoubleclick — clear highlight
+    clearHighlights,
   );
 }
 

@@ -209,12 +209,16 @@ export function renderPlot(emb) {
 }
 
 // ── Plotly event listeners + resize observer ──────────────────────────────────
-let _onPointClick  = null;
-let _onDoubleClick = null;
+let _onPointClick    = null;
+let _onDoubleClick   = null;
+let _onLegendClick   = null;
+let _onLegendDblClick = null;
 
-export function setPlotCallbacks(onPointClick, onDoubleClick) {
-  _onPointClick  = onPointClick;
-  _onDoubleClick = onDoubleClick;
+export function setPlotCallbacks(onPointClick, onDoubleClick, onLegendClick, onLegendDblClick) {
+  _onPointClick     = onPointClick;
+  _onDoubleClick    = onDoubleClick;
+  _onLegendClick    = onLegendClick;
+  _onLegendDblClick = onLegendDblClick;
 }
 
 function attachPlotListeners() {
@@ -223,6 +227,17 @@ function attachPlotListeners() {
 
   els.plot.on('plotly_click',       data => _onPointClick  && _onPointClick(data));
   els.plot.on('plotly_doubleclick', ()   => _onDoubleClick && _onDoubleClick());
+
+  // Intercept legend-item clicks: trigger highlight instead of Plotly's hide/show.
+  // Returning false cancels Plotly's default visibility toggle.
+  els.plot.on('plotly_legendclick', data => {
+    if (_onLegendClick) _onLegendClick(data);
+    return false;
+  });
+  els.plot.on('plotly_legenddoubleclick', () => {
+    if (_onLegendDblClick) _onLegendDblClick();
+    return false;
+  });
 
   // Recalculate domains when the plot container is resized so the axes box
   // stays correctly positioned at all screen sizes.
