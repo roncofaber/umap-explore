@@ -3,7 +3,7 @@ import { els } from './elements.js';
 import { ensureFeatureData } from './api.js';
 import { rerenderColors } from './legend.js';
 
-// ── Loading indicator ────────────────────────────────────────────────────────
+// ── Loading indicator ─────────────────────────────────────────────────────────
 export function setLoading(message = null) {
   const active = message !== null;
   els.loading.style.display    = active ? 'block' : 'none';
@@ -11,21 +11,6 @@ export function setLoading(message = null) {
   if (active) els.loadingMsg.textContent = message;
 }
 
-// ── Param status bar ──────────────────────────────────────────────────────────
-export function updateParamStatus() {
-  if (!els.paramStatus) return;
-  const scale = state.scale === 'scaled' ? 'scaled' : 'raw';
-  if (state.method === 'pca') {
-    const evr = state.explainedVarianceRatio;
-    const variance = evr
-      ? `  ·  PC1: ${(evr[0] * 100).toFixed(1)}%  ·  PC2: ${(evr[1] * 100).toFixed(1)}%`
-      : '';
-    els.paramStatus.textContent = `PCA  ·  ${scale}${variance}`;
-  } else {
-    els.paramStatus.textContent =
-      `n_neighbors=${state.nNeighbors}  ·  min_dist=${state.minDist}  ·  metric=${state.metric}  ·  ${scale}`;
-  }
-}
 
 // ── Dataset info card ─────────────────────────────────────────────────────────
 export function updateDatasetInfo() {
@@ -34,10 +19,10 @@ export function updateDatasetInfo() {
 
   const nClasses   = ds.label_colors ? ds.label_colors.length : '—';
   const classLabel = ds.has_labels ? `${nClasses} class${nClasses !== 1 ? 'es' : ''}` : 'continuous';
-  els.datasetStats.innerHTML =
-    `${ds.n_points} points<span class="stat-sep">·</span>${ds.n_features} features<span class="stat-sep">·</span>${classLabel}`;
-  els.datasetDesc.textContent = ds.description || '';
-  els.datasetInfoCard.hidden  = false;
+  // <details>: summary = stats line, body = description
+  els.datasetStats.textContent = `${ds.n_points} pts · ${ds.n_features} features · ${classLabel}`;
+  els.datasetDesc.textContent  = ds.description || '';
+  els.datasetInfoCard.hidden   = false;
 }
 
 // ── Color-by selector ─────────────────────────────────────────────────────────

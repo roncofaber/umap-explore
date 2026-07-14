@@ -4,6 +4,41 @@ import { MCS_STEPS, MS_STEPS, CSE_STEPS } from './constants.js';
 import { fetchClusterResult } from './api.js';
 import { updateLegend, rerenderColors } from './legend.js';
 import { positionAllTicks, setLoading } from './ui.js';
+export { fetchTree, setClusterView };
+
+export async function fetchTree() {
+  if (!state.dataset) return;
+  setLoading('rendering tree…');
+  try {
+    const params = new URLSearchParams({
+      method: state.method, n_neighbors: state.nNeighbors, min_dist: state.minDist,
+      n_components: 2, metric: state.metric, scale: state.scale,
+      min_cluster_size: state.minClusterSize, min_samples: state.minSamples,
+      cluster_selection_method: state.clusterSelectionMethod,
+      cluster_selection_epsilon: state.clusterSelectionEpsilon,
+      allow_single_cluster: state.allowSingleCluster,
+      cluster_on: state.clusterOn,
+    });
+    const resp = await fetch(`/api/cluster/${state.dataset}/tree?${params}`);
+    if (!resp.ok) throw new Error(`Tree API error ${resp.status}`);
+    els.treeWrapper.innerHTML = await resp.text();
+  } catch (e) {
+    console.error('Tree fetch failed:', e);
+    els.treeWrapper.innerHTML = `<p style="color:var(--text-3);padding:2rem">Tree unavailable: ${e.message}</p>`;
+  } finally {
+    setLoading(null);
+  }
+}
+
+export function setClusterView(view) {
+  state.clusterView = view;
+  const isTree = view === 'tree';
+  els.viewScatter.classList.toggle('active', !isTree);
+  els.viewTree.classList.toggle('active', isTree);
+  els.plot.closest('#plot-wrapper').hidden = isTree;
+  els.treeWrapper.hidden = !isTree;
+  if (isTree) fetchTree();
+}
 
 export async function fetchAndCluster() {
   if (!state.dataset) return;
@@ -21,6 +56,7 @@ export async function fetchAndCluster() {
       `${n_clusters} cluster${n_clusters !== 1 ? 's' : ''}  ·  ${n_noise} noise points (${pct}%)`;
     els.clusterStat.hidden = false;
     rerenderColors();
+    if (state.clusterView === 'tree') fetchTree();
   } catch (e) {
     console.error('Clustering failed:', e);
   } finally {
@@ -46,8 +82,14 @@ export function switchTab(tab) {
     requestAnimationFrame(positionAllTicks);
     fetchAndCluster();
   } else {
+    // Reset tree view when leaving HDBSCAN tab
+    state.clusterView = 'scatter';
     state.clusterResult = null;
     els.clusterStat.hidden = true;
+    els.viewScatter.classList.add('active');
+    els.viewTree.classList.remove('active');
+    els.plot.closest('#plot-wrapper').hidden = false;
+    els.treeWrapper.hidden = true;
     rerenderColors();
   }
 }
@@ -118,6 +160,16 @@ export function initClusterControls() {
     state.allowSingleCluster = true;
     els.ascTrue.classList.add('active'); els.ascFalse.classList.remove('active');
     fetchAndCluster();
+  });
+
+  els.viewScatter.addEventListener('click', () => {
+    if (state.clusterView === 'scatter') return;
+    setClusterView('scatter');
+  });
+
+  els.viewTree.addEventListener('click', () => {
+    if (state.clusterView === 'tree') return;
+    setClusterView('tree');
   });
 
   els.coProjection.addEventListener('click', () => {

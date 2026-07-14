@@ -18,6 +18,7 @@ export const state = {
   clusterSelectionEpsilon:  0.0,
   allowSingleCluster:       false,
   clusterOn:                'projection', // 'projection' | 'data'
+  clusterView:              'scatter',    // 'scatter' | 'tree'
   clusterResult:            null,
   explainedVarianceRatio:   null,    // [pc1, pc2] from PCA, null otherwise
 };

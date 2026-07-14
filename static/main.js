@@ -4,17 +4,15 @@ import { N_NEIGHBORS_STEPS, MIN_DIST_STEPS } from './constants.js';
 import { fetchEmbedding, ensureFeatureData } from './api.js';
 import { renderPlot, getCurrentEmb, setPlotCallbacks } from './plot.js';
 import { updateLegend, toggleHighlight, toggleClusterHighlight, rerenderColors } from './legend.js';
-import { fetchAndCluster, switchTab, initClusterControls } from './cluster.js';
+import { fetchAndCluster, switchTab, initClusterControls, setClusterView } from './cluster.js';
 import { initCodeModal, initDataModal } from './modals.js';
 import {
-  updateParamStatus, updateDatasetInfo, updateColorByOptions, onColorByChange,
   initSidebarToggle, positionAllTicks, initTooltips, setLoading,
 } from './ui.js';
 
 // ── Fetch + render orchestrator ───────────────────────────────────────────────
 async function fetchAndRender() {
   setLoading('computing…');
-  updateParamStatus();
   try {
     const emb = await fetchEmbedding();
     state.explainedVarianceRatio = emb.explained_variance_ratio ?? null;

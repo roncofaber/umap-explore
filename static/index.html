@@ -25,10 +25,10 @@
       <div class="control-group">
         <label class="field-label" for="dataset-select">Dataset</label>
         <select id="dataset-select"></select>
-        <div id="dataset-info" class="dataset-info" hidden>
-          <div class="dataset-stats" id="dataset-stats"></div>
-          <p class="dataset-desc" id="dataset-desc"></p>
-        </div>
+        <details id="dataset-info" class="section-explainer" hidden>
+          <summary id="dataset-stats"></summary>
+          <p id="dataset-desc"></p>
+        </details>
       </div>
 
       <!-- Tabs -->
@@ -146,6 +146,17 @@
           </div>
         </details>
 
+        <div class="params-divider">Visualization</div>
+
+        <div class="control-group">
+          <div class="param-block">
+            <div class="toggle-group">
+              <button id="view-scatter" class="toggle active">scatter</button>
+              <button id="view-tree" class="toggle">tree</button>
+            </div>
+          </div>
+        </div>
+
         <div class="params-divider">Parameters</div>
 
         <div class="control-group">
@@ -262,10 +273,10 @@
       <div id="plot-wrapper">
         <div id="plot"></div>
       </div>
+      <div id="tree-wrapper" hidden></div>
       <div id="legend"></div>
       <div id="loading"></div>
       <div id="loading-msg"></div>
-      <div id="param-status"></div>
     </section>
   </main>
 

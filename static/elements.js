@@ -41,13 +41,15 @@ export const els = {
   ascTrue:          q('asc-true'),
   coProjection:     q('co-projection'),
   coData:           q('co-data'),
+  viewScatter:      q('view-scatter'),
+  viewTree:         q('view-tree'),
+  treeWrapper:      q('tree-wrapper'),
   clusterStat:      q('cluster-stat'),
   // Plot
   plot:             q('plot'),
   legend:           q('legend'),
   loading:          q('loading'),
   loadingMsg:       q('loading-msg'),
-  paramStatus:      q('param-status'),
   // Sidebar
   sidebarToggle:    q('sidebar-toggle'),
   sidebar:          q('controls'),

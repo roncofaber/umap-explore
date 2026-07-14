@@ -8,8 +8,13 @@ from typing import Literal
 
 import colorcet as cc
 import h5py
+import io
 import numpy as np
 import hdbscan as hdbscan_lib
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+from fastapi.responses import Response
 from datasets.meta import DATASETS_META, make_key
 
 
@@ -100,6 +105,39 @@ def get_data(
     }
 
 
+def _get_cluster_coords(dataset_name, method, n_neighbors, min_dist,
+                        n_components, metric, scale, cluster_on, path):
+    """Shared helper: return the coordinate matrix to cluster on."""
+    if cluster_on == 'data':
+        with h5py.File(path, 'r') as f:
+            m = f['_meta']
+            if 'X_raw' not in m:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Feature data not available — run: python precompute.py --action add-features",
+                )
+            X_key = 'X_scaled' if scale == 'scaled' else 'X_raw'
+            return m[X_key][()]
+    else:
+        key = (f"pca_{n_components}_{scale}" if method == 'pca'
+               else make_key(n_neighbors, min_dist, n_components, metric, scale))
+        with h5py.File(path, 'r') as f:
+            if key not in f:
+                raise HTTPException(status_code=404, detail=f"No embedding for key '{key}'")
+            return np.column_stack([f[key]['x'][()], f[key]['y'][()]])
+
+
+def _hdbscan_params(min_cluster_size, min_samples, cluster_selection_method,
+                    cluster_selection_epsilon, allow_single_cluster):
+    return dict(
+        min_cluster_size=min_cluster_size,
+        min_samples=min_samples,
+        cluster_selection_method=cluster_selection_method,
+        cluster_selection_epsilon=cluster_selection_epsilon,
+        allow_single_cluster=allow_single_cluster,
+    )
+
+
 @app.get("/api/cluster/{dataset_name}")
 def get_cluster(
     dataset_name: str,
@@ -124,28 +162,11 @@ def get_cluster(
     if not path.exists():
         raise HTTPException(status_code=404, detail=f"No embeddings for '{dataset_name}'")
 
-    if cluster_on == 'data':
-        with h5py.File(path, 'r') as f:
-            m = f['_meta']
-            if 'X_raw' not in m:
-                raise HTTPException(
-                    status_code=404,
-                    detail="Feature data not available — run: python precompute.py --action add-features",
-                )
-            X_key = 'X_scaled' if scale == 'scaled' else 'X_raw'
-            coords = m[X_key][()]
-    else:
-        key = f"pca_{n_components}_{scale}" if method == 'pca' else make_key(n_neighbors, min_dist, n_components, metric, scale)
-        with h5py.File(path, 'r') as f:
-            if key not in f:
-                raise HTTPException(status_code=404, detail=f"No embedding for key '{key}'")
-            coords = np.column_stack([f[key]['x'][()], f[key]['y'][()]])
+    coords = _get_cluster_coords(dataset_name, method, n_neighbors, min_dist,
+                                  n_components, metric, scale, cluster_on, path)
     clusterer = hdbscan_lib.HDBSCAN(
-        min_cluster_size=min_cluster_size,
-        min_samples=min_samples,
-        cluster_selection_method=cluster_selection_method,
-        cluster_selection_epsilon=cluster_selection_epsilon,
-        allow_single_cluster=allow_single_cluster,
+        **_hdbscan_params(min_cluster_size, min_samples, cluster_selection_method,
+                          cluster_selection_epsilon, allow_single_cluster)
     ).fit(coords)
 
     labels = clusterer.labels_.tolist()
@@ -163,6 +184,71 @@ def get_cluster(
         'cluster_names': [f'cluster {i}' for i in unique],
         'cluster_colors': [palette[i % len(palette)] for i in unique],
     }
+
+
+@app.get("/api/cluster/{dataset_name}/tree")
+def get_cluster_tree(
+    dataset_name: str,
+    method: Literal['umap', 'pca'] = Query('umap'),
+    n_neighbors: int = Query(15, ge=1),
+    min_dist: float = Query(0.1, ge=0.0, le=2.0),
+    n_components: int = Query(2, ge=2, le=2),
+    metric: Literal['euclidean', 'cosine', 'manhattan', 'correlation'] = Query('euclidean'),
+    scale: Literal['scaled', 'raw'] = Query('scaled'),
+    min_cluster_size: int = Query(15, ge=2),
+    min_samples: int = Query(5, ge=1),
+    cluster_selection_method: Literal['eom', 'leaf'] = Query('eom'),
+    cluster_selection_epsilon: float = Query(0.0, ge=0.0),
+    allow_single_cluster: bool = Query(False),
+    cluster_on: Literal['projection', 'data'] = Query('projection'),
+):
+    if not re.match(r'^[a-zA-Z0-9_]+$', dataset_name):
+        raise HTTPException(status_code=400, detail="Invalid dataset name")
+    if dataset_name not in DATASETS_META:
+        raise HTTPException(status_code=404, detail=f"Unknown dataset '{dataset_name}'")
+    path = _h5(dataset_name)
+    if not path.exists():
+        raise HTTPException(status_code=404, detail=f"No embeddings for '{dataset_name}'")
+
+    coords = _get_cluster_coords(dataset_name, method, n_neighbors, min_dist,
+                                  n_components, metric, scale, cluster_on, path)
+    clusterer = hdbscan_lib.HDBSCAN(
+        **_hdbscan_params(min_cluster_size, min_samples, cluster_selection_method,
+                          cluster_selection_epsilon, allow_single_cluster)
+    ).fit(coords)
+
+    palette = cc.glasbey_dark
+    fig, ax = plt.subplots(figsize=(9, 4))
+    fig.patch.set_facecolor('#eef0f5')
+    ax.set_facecolor('#eef0f5')
+
+    clusterer.condensed_tree_.plot(
+        select_clusters=True,
+        selection_palette=palette,
+        axis=ax,
+    )
+
+    # Annotate the epsilon threshold as a vertical line (λ = 1/ε)
+    if cluster_selection_epsilon > 0:
+        lam_eps = 1.0 / cluster_selection_epsilon
+        ax.axvline(lam_eps, color='#e05252', linewidth=1.5, linestyle='--', zorder=5)
+        ax.text(lam_eps, ax.get_ylim()[1] * 0.98,
+                f'ε = {cluster_selection_epsilon}',
+                color='#e05252', fontsize=9, ha='left', va='top',
+                fontfamily='monospace')
+
+    ax.set_xlabel('λ  (1 / distance)', fontsize=11, labelpad=6)
+    ax.set_ylabel('Cluster size', fontsize=11, labelpad=6)
+    ax.tick_params(labelsize=9)
+    for spine in ('top', 'right'):
+        ax.spines[spine].set_visible(False)
+    fig.tight_layout()
+
+    buf = io.StringIO()
+    fig.savefig(buf, format='svg', bbox_inches='tight', facecolor='#eef0f5')
+    plt.close(fig)
+
+    return Response(content=buf.getvalue(), media_type='image/svg+xml')
 
 
 @app.get("/api/embeddings/{dataset_name}")
