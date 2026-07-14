@@ -246,9 +246,16 @@ function makeTrace(emb) {
     marker.color = vals;
     marker.colorscale = 'Viridis';
     marker.showscale = true;
+    // Horizontal colorbar sits in the bottom margin — box never shifts
+    const W = els.plot.offsetWidth  || 700;
+    const H = els.plot.offsetHeight || 700;
     marker.colorbar = {
-      thickness: 12, len: 0.7, tickfont: TICK_FONT,
-      title: { text: fname, font: TICK_FONT, side: 'right' },
+      orientation: 'h',
+      x: 0.5, xanchor: 'center',
+      y: MARGIN.b / H - 0.02, yanchor: 'top',
+      thickness: 10, len: 0.6,
+      tickfont: TICK_FONT,
+      title: { text: fname, font: TICK_FONT, side: 'bottom' },
     };
   } else if (!isContinuous && state.highlightedLabel !== null) {
     // Highlight one class, mute the rest
@@ -278,7 +285,7 @@ function makeTrace(emb) {
 }
 
 const AXIS_LABEL_FONT = { family: "'JetBrains Mono', monospace", size: 14, color: '#515978' };
-const TICK_FONT      = { family: "'JetBrains Mono', monospace", size: 11, color: '#8a94b2' };
+const TICK_FONT      = { family: "'JetBrains Mono', monospace", size: 13, color: '#8a94b2' };
 const AXIS_BOX = {
   showline: true, linecolor: '#000', linewidth: 1.5, mirror: true,
   showgrid: false, zeroline: false,
@@ -286,7 +293,7 @@ const AXIS_BOX = {
   tickfont: TICK_FONT, nticks: 5, tickformat: '.1f',
 };
 
-const MARGIN = { t: 50, r: 80, b: 90, l: 60 };  // l+r = t+b = 140
+const MARGIN = { t: 30, r: 60, b: 90, l: 60 };  // l+r = t+b = 120, symmetric left/right
 
 function makeLayout(emb) {
   // Lock axes domain in paper coords so a colorbar can never shift the box.
