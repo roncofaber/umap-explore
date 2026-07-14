@@ -4,162 +4,116 @@ import { MCS_STEPS, MS_STEPS, CSE_STEPS } from './constants.js';
 import { fetchClusterResult } from './api.js';
 import { updateLegend, rerenderColors } from './legend.js';
 import { positionAllTicks, setLoading } from './ui.js';
-// ── Condensed tree layout & rendering ────────────────────────────────────────
+// ── Condensed tree rendering (icicle plot, mirrors hdbscan reference) ─────────
 
-function computeYLayout(nodes) {
-  const nodeMap = Object.fromEntries(nodes.map(n => [n.id, n]));
-  const childrenOf = {};
-  nodes.forEach(n => {
-    if (n.parent !== -1) {
-      (childrenOf[n.parent] = childrenOf[n.parent] || []).push(n.id);
-    }
-  });
+function renderTreePlot(data) {
+  const { bars, lines, selected_clusters, epsilon } = data;
 
-  const root = nodes.find(n => n.parent === -1);
-  const layout = {};
+  const MONO = "'JetBrains Mono', monospace";
+  const SANS = "'Plus Jakarta Sans', sans-serif";
+  const AXIS_FONT = { family: MONO, size: 13, color: '#515978' };
+  const TICK_FONT = { family: MONO, size: 11, color: '#8a94b2' };
 
-  function assign(id, yStart) {
-    const kids = (childrenOf[id] || []).filter(c => nodeMap[c]);
-    if (!kids.length) {
-      layout[id] = [yStart, yStart + nodeMap[id].size];
-      return yStart + nodeMap[id].size;
-    }
-    kids.sort((a, b) => nodeMap[a].size - nodeMap[b].size);
-    let y = yStart;
-    for (const kid of kids) y = assign(kid, y);
-    layout[id] = [yStart, y];
-    return y;
-  }
+  // Main bar trace — all bars, colored dark-to-light by cluster size
+  const traces = [{
+    type: 'bar',
+    x: bars.centers,
+    y: bars.tops,
+    base: bars.bottoms,
+    width: bars.widths,
+    marker: {
+      color: bars.sizes_normalized,
+      colorscale: [[0, '#dde2ed'], [1, '#515978']],
+      showscale: false,
+      line: { width: 0 },
+    },
+    hovertemplate: '%{width:.0f} pts — λ: %{base:.3f} → %{y:.3f}<extra></extra>',
+    showlegend: false,
+  }];
 
-  if (root) assign(root.id, 0);
-  return layout;
-}
-
-function renderTreePlot(treeData) {
-  const { nodes, n_points, epsilon } = treeData;
-  const layout = computeYLayout(nodes);
-  const nodeMap = Object.fromEntries(nodes.map(n => [n.id, n]));
-
-  const traces = [];
   const shapes = [];
+  const annotations = [];
 
-  // Build children map for connector logic
-  const childrenOf = {};
-  nodes.forEach(n => {
-    if (n.parent !== -1) (childrenOf[n.parent] = childrenOf[n.parent] || []).push(n.id);
-  });
-  const nodeMap2 = Object.fromEntries(nodes.map(n => [n.id, n]));
-
-  // Draw ONLY selected cluster bars (filled rectangles).
-  // Internal/unselected nodes are omitted — they create visual noise.
-  nodes.filter(n => n.selected).forEach(node => {
-    const [y0, y1] = layout[node.id] || [0, node.size];
-    const { birth_lambda: x0, death_lambda: x1, label, color, size } = node;
-    traces.push({
-      type: 'scatter',
-      x: [x0, x1, x1, x0, x0],
-      y: [y0, y0, y1, y1, y0],
-      fill: 'toself',
-      fillcolor: color + 'cc',
-      line: { color, width: 1.5 },
-      mode: 'lines',
-      customdata: [{ label, selected: true, size }],
-      hovertemplate:
-        `<b>cluster ${label}</b><br>${size} points<br>λ: ${x0.toFixed(3)} → ${x1.toFixed(3)}<extra></extra>`,
-      showlegend: false,
-    });
-  });
-
-  // Vertical connector lines: at each split lambda, connect all selected sibling clusters.
-  // Walk up the tree from each selected cluster to find the nearest split that
-  // connects to another selected cluster.
-  const selectedSet = new Set(nodes.filter(n => n.selected).map(n => n.id));
-
-  // Build ancestor map for quick lookup
-  const parentOf = Object.fromEntries(nodes.map(n => [n.id, n.parent]));
-
-  function nearestSelectedAncestor(id) {
-    let cur = parentOf[id];
-    while (cur !== undefined && cur !== -1) {
-      if (selectedSet.has(cur)) return cur;
-      cur = parentOf[cur];
-    }
-    return null;
-  }
-
-  // Group selected clusters by their nearest common split lambda
-  const connectors = {};  // splitLambda -> [y-positions of clusters]
-  nodes.filter(n => n.selected).forEach(node => {
-    const splitLambda = node.birth_lambda.toFixed(6);
-    if (!connectors[splitLambda]) connectors[splitLambda] = [];
-    const [y0, y1] = layout[node.id] || [0, node.size];
-    connectors[splitLambda].push(y0, y1);
-  });
-
-  Object.entries(connectors).forEach(([lStr, ys]) => {
-    if (ys.length < 4) return;  // need at least 2 clusters (4 y-values)
-    const lam = parseFloat(lStr);
+  // Horizontal connector lines — black, matching hdbscan reference
+  lines.forEach(line => {
     shapes.push({
       type: 'line',
-      x0: lam, x1: lam,
-      y0: Math.min(...ys), y1: Math.max(...ys),
-      line: { color: '#8a94b2', width: 1.2 },
-      layer: 'below',
+      x0: line.x[0], x1: line.x[1],
+      y0: line.y[0], y1: line.y[1],
+      line: { color: '#1c2033', width: 1.2 },
     });
   });
 
-  // ε threshold line
-  const annotations = [];
-  if (epsilon > 0) {
-    const lx = 1.0 / epsilon;
-    shapes.push({ type: 'line', x0: lx, x1: lx, y0: 0, y1: n_points,
-                  line: { color: '#e05252', width: 1.5, dash: 'dash' } });
-    annotations.push({ x: lx, y: n_points * 0.98, xanchor: 'left', showarrow: false,
-                        text: `ε = ${epsilon}`,
-                        font: { color: '#e05252', size: 11, family: "'JetBrains Mono', monospace" } });
-  }
-
-  // Legend entries for selected clusters
-  nodes.filter(n => n.selected).forEach(n => {
+  // Selected cluster outlines + labels + legend entries
+  selected_clusters.forEach(c => {
+    const { x_left, x_right, y_bottom, y_top } = c.bounds;
+    shapes.push({
+      type: 'rect',
+      x0: x_left, x1: x_right, y0: y_bottom, y1: y_top,
+      fillcolor: 'transparent',
+      line: { color: c.color, width: 2.5 },
+    });
+    annotations.push({
+      x: (x_left + x_right) / 2, y: y_top,
+      text: `cluster ${c.label}`,
+      showarrow: false, yanchor: 'bottom',
+      font: { color: c.color, size: 11, family: SANS },
+    });
     traces.push({
       type: 'scatter', x: [null], y: [null], mode: 'markers',
-      marker: { color: n.color, size: 10, symbol: 'square' },
-      name: `cluster ${n.label}`, showlegend: true,
+      marker: { color: c.color, size: 10, symbol: 'square' },
+      name: `cluster ${c.label}`, showlegend: true,
     });
   });
 
-  const plotLayout = {
-    margin: { t: 20, r: 20, b: 55, l: 60 },
+  // ε threshold — horizontal dashed line at λ = 1/ε
+  if (epsilon > 0) {
+    const ly = 1.0 / epsilon;
+    shapes.push({
+      type: 'line', x0: 0, x1: 1, xref: 'paper',
+      y0: ly, y1: ly,
+      line: { color: '#e05252', width: 1.5, dash: 'dash' },
+    });
+    annotations.push({
+      x: 1, xref: 'paper', y: ly, xanchor: 'right', yanchor: 'bottom',
+      text: `ε = ${epsilon}`, showarrow: false,
+      font: { color: '#e05252', size: 11, family: MONO },
+    });
+  }
+
+  Plotly.react(els.treeWrapper, traces, {
+    margin: { t: 10, r: 20, b: 60, l: 65 },
     paper_bgcolor: '#eef0f5', plot_bgcolor: '#eef0f5',
-    showlegend: true,
-    legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.18,
-              font: { family: "'Plus Jakarta Sans', sans-serif", size: 12, color: '#515978' } },
+    bargap: 0,
+    showlegend: selected_clusters.length > 0,
+    legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.22,
+              font: { family: SANS, size: 12, color: '#515978' } },
     shapes, annotations,
-    xaxis: {
-      title: { text: 'λ  (1 / distance)',
-               font: { family: "'JetBrains Mono', monospace", size: 13, color: '#515978' } },
-      showgrid: false, zeroline: false, rangemode: 'tozero',
-      tickfont: { family: "'JetBrains Mono', monospace", size: 11, color: '#8a94b2' },
-    },
+    xaxis: { visible: false, showgrid: false, zeroline: false },
     yaxis: {
-      title: { text: 'data points',
-               font: { family: "'JetBrains Mono', monospace", size: 13, color: '#515978' } },
-      showgrid: false, zeroline: false,
-      tickfont: { family: "'JetBrains Mono', monospace", size: 11, color: '#8a94b2' },
+      title: { text: 'λ  (1 / distance)', font: AXIS_FONT, standoff: 6 },
+      showgrid: false, zeroline: false, tickfont: TICK_FONT,
+      tickformat: '.2f',
     },
-  };
+  }, { responsive: true });
 
-  Plotly.react(els.treeWrapper, traces, plotLayout, { responsive: true });
-
-  // Click a selected cluster bar → highlight those points in the scatter
-  els.treeWrapper.on('plotly_click', data => {
-    const cd = data.points[0]?.customdata?.[0];
-    if (cd?.selected) toggleClusterHighlight(cd.label);
+  // Click → find which selected cluster bounds contain the clicked bar
+  els.treeWrapper.on('plotly_click', ev => {
+    if (!ev.points.length) return;
+    const px = ev.points[0].x;
+    // lambda value is base + top (base=bottom, y=height)
+    const py = ev.points[0].base + ev.points[0].y * 0.5;
+    const hit = selected_clusters.find(c =>
+      px >= c.bounds.x_left && px <= c.bounds.x_right &&
+      py >= c.bounds.y_bottom && py <= c.bounds.y_top
+    );
+    if (hit) toggleClusterHighlight(hit.label);
   });
   els.treeWrapper.on('plotly_doubleclick', () => {
     if (state.highlightedCluster !== null) { state.highlightedCluster = null; rerenderColors(); }
   });
 }
+
 
 export async function fetchTree() {
   if (!state.dataset) return;
@@ -193,6 +147,7 @@ export function setClusterView(view) {
   els.viewTree.classList.toggle('active', isTree);
   els.plot.closest('#plot-wrapper').hidden = isTree;
   els.treeWrapper.hidden = !isTree;
+  els.legend.hidden = isTree;   // hide the scatter legend in tree view
   if (isTree) fetchTree();
 }
 
@@ -235,10 +190,11 @@ export function switchTab(tab) {
   els.contentHdbscan.hidden = tab !== 'hdbscan';
 
   if (tab === 'hdbscan') {
+    els.viewToggle.hidden = false;
     requestAnimationFrame(positionAllTicks);
     fetchAndCluster();
   } else {
-    // Reset tree view when leaving HDBSCAN tab
+    els.viewToggle.hidden = true;
     state.clusterView = 'scatter';
     state.clusterResult = null;
     els.clusterStat.hidden = true;
@@ -246,6 +202,7 @@ export function switchTab(tab) {
     els.viewTree.classList.remove('active');
     els.plot.closest('#plot-wrapper').hidden = false;
     els.treeWrapper.hidden = true;
+    els.legend.hidden = false;
     rerenderColors();
   }
 }

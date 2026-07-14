@@ -181,6 +181,47 @@ def get_cluster(
     }
 
 
+def _condensed_tree_plot_data(clusterer, palette):
+    """Build Plotly-ready data from the hdbscan condensed tree.
+    Mirrors get_plot_data() but returns JSON-serialisable dicts + color info."""
+    from hdbscan.plots import CondensedTree
+    ct   = CondensedTree(clusterer.condensed_tree_._raw_tree, clusterer.labels_)
+    pd   = ct.get_plot_data(max_rectangle_per_icicle=20)
+    sel  = sorted(clusterer.condensed_tree_._select_clusters())
+    n_cl = len(sel)
+
+    selected_info = []
+    for i, node in enumerate(sel):
+        b = pd['cluster_bounds'].get(node, [0, 0, 0, 0])
+        # Guard against infinite λ values (degenerate data)
+        y_top = float(b[3]) if np.isfinite(b[3]) else float(b[2]) * 2 + 0.1
+        selected_info.append({
+            'label':  i,
+            'color':  palette[i % len(palette)],
+            'bounds': {
+                'x_left':   float(b[0]), 'x_right': float(b[1]),
+                'y_bottom': float(b[2]), 'y_top':   y_top,
+            },
+        })
+
+    max_w = max(pd['bar_widths'], default=1)
+    return {
+        'bars': {
+            'centers':           [float(x) for x in pd['bar_centers']],
+            'tops':              [float(x) for x in pd['bar_tops']],
+            'bottoms':           [float(x) for x in pd['bar_bottoms']],
+            'widths':            [float(x) for x in pd['bar_widths']],
+            'sizes_normalized':  [float(x) / max_w for x in pd['bar_widths']],
+        },
+        'lines': [
+            {'x': [float(xs[0]), float(xs[1])], 'y': [float(ys[0]), float(ys[1])]}
+            for xs, ys in zip(pd['line_xs'], pd['line_ys'])
+        ],
+        'selected_clusters': selected_info,
+        'n_clusters': n_cl,
+    }
+
+
 @app.get("/api/cluster/{dataset_name}/tree")
 def get_cluster_tree(
     dataset_name: str,
@@ -212,49 +253,9 @@ def get_cluster_tree(
                           cluster_selection_epsilon, allow_single_cluster)
     ).fit(coords)
 
-    n = len(coords)
-    palette = cc.glasbey_dark
-    tree_df = clusterer.condensed_tree_.to_pandas()
-    selected = set(int(x) for x in clusterer.condensed_tree_._select_clusters())
-    sorted_selected = sorted(selected)
-    node_to_label = {node: i for i, node in enumerate(sorted_selected)}
-
-    # Build node info: every row where child_size > 1 is an internal cluster node.
-    # The root is the node that appears as parent but never as a child (ID = n).
-    root_id = int(tree_df['parent'].min())
-    node_map = {root_id: {'id': root_id, 'parent': -1, 'birth_lambda': 0.0,
-                           'size': n, 'death_lambda': 0.0}}
-
-    for _, row in tree_df[tree_df['child_size'] > 1].iterrows():
-        cid, pid = int(row['child']), int(row['parent'])
-        if cid not in node_map:
-            node_map[cid] = {'id': cid, 'parent': pid,
-                              'birth_lambda': float(row['lambda_val']),
-                              'size': int(row['child_size']), 'death_lambda': 0.0}
-
-    # death_lambda = max lambda where a CLUSTER child (size > 1) branches off,
-    # not single-point drops — otherwise parent bars extend too far right.
-    for _, row in tree_df[tree_df['child_size'] > 1].iterrows():
-        pid = int(row['parent'])
-        if pid in node_map:
-            node_map[pid]['death_lambda'] = max(
-                node_map[pid]['death_lambda'], float(row['lambda_val']))
-
-    nodes = []
-    for info in node_map.values():
-        is_sel = info['id'] in selected
-        label = node_to_label.get(info['id'], -1)
-        color = palette[label % len(palette)] if is_sel else '#c0c8d8'
-        nodes.append({
-            'id': info['id'], 'parent': info['parent'],
-            'birth_lambda': info['birth_lambda'],
-            'death_lambda': max(info['death_lambda'], info['birth_lambda'] + 1e-6),
-            'size': info['size'], 'selected': is_sel,
-            'label': label, 'color': color,
-        })
-
-    return {'nodes': nodes, 'n_points': n,
-            'epsilon': cluster_selection_epsilon, 'n_clusters': len(selected)}
+    data = _condensed_tree_plot_data(clusterer, cc.glasbey_dark)
+    data['epsilon'] = cluster_selection_epsilon
+    return data
 
 
 @app.get("/api/embeddings/{dataset_name}")

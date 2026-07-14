@@ -739,6 +739,32 @@ input[type="range"]::-moz-range-thumb {
 
 #plot { width: 100%; height: 100%; cursor: crosshair; }
 
+/* ── Scatter / tree view toggle ─────────── */
+.view-toggle {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.view-toggle .toggle {
+  padding: 0.3rem 1rem;
+  border: none;
+  background: var(--panel);
+  color: var(--text-3);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--font-body);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.view-toggle .toggle:not(:last-child) { border-right: 1px solid var(--border); }
+.view-toggle .toggle.active { background: var(--accent); color: #fff; }
+.view-toggle .toggle:not(.active):hover { background: var(--accent-dim); color: var(--accent); }
+
 /* ── Condensed tree view (Plotly) ────────── */
 #tree-wrapper {
   width: min(100%, 900px);

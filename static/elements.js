@@ -41,6 +41,7 @@ export const els = {
   ascTrue:          q('asc-true'),
   coProjection:     q('co-projection'),
   coData:           q('co-data'),
+  viewToggle:       q('view-toggle'),
   viewScatter:      q('view-scatter'),
   viewTree:         q('view-tree'),
   treeWrapper:      q('tree-wrapper'),
