@@ -94,8 +94,12 @@ def precompute_dataset(dataset_name, output_dir, n_neighbors_list, min_dist_list
         for scale in scales_list:
             pca_key = f"pca_2_{scale}"
             if pca_key in f:
-                print(f"PCA ({scale}) — skipping (cached)")
-                continue
+                # Recompute only if explained_variance_ratio is missing (fast, < 1s)
+                if 'explained_variance_ratio' in f[pca_key]:
+                    print(f"PCA ({scale}) — skipping (cached)")
+                    continue
+                print(f"PCA ({scale}) — refreshing (missing variance ratio)...")
+                del f[pca_key]
             print(f"PCA ({scale}) — computing...")
             pca = PCA(n_components=2)
             embedding = pca.fit_transform(X_by_scale[scale])
@@ -260,8 +264,10 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--action',
-                        choices=['compute', 'align', 'convert-json', 'add-features'],
-                        default='compute')
+                        choices=['compute', 'align', 'add-features', 'all',
+                                 'convert-json'],
+                        default='compute',
+                        help='"all" runs compute → add-features → align in sequence')
     parser.add_argument('--dataset', choices=list(DATASETS.keys()))
     parser.add_argument('--output-dir', default='data/embeddings')
     # Compute-only options
@@ -274,9 +280,21 @@ def main():
     args = parser.parse_args()
 
     output_dir = Path(args.output_dir)
+    targets = [args.dataset] if args.dataset else list(DATASETS.keys())
 
-    if args.action == 'align':
-        targets = [args.dataset] if args.dataset else list(DATASETS.keys())
+    if args.action in ('compute', 'all'):
+        for name in targets:
+            print(f"\n=== Precomputing {name} ===")
+            precompute_dataset(
+                name, output_dir,
+                args.n_neighbors, args.min_dist, args.n_components,
+                args.metric, args.scale,
+            )
+
+    if args.action in ('add-features', 'all'):
+        _add_features(targets, output_dir)
+
+    if args.action in ('align', 'all'):
         for name in targets:
             print(f"\n=== Aligning {name} ===")
             _align_dataset(
@@ -285,22 +303,8 @@ def main():
                 args.metric, args.scale,
             )
 
-    elif args.action == 'convert-json':
+    if args.action == 'convert-json':
         _convert_json_to_h5(output_dir)
-
-    elif args.action == 'add-features':
-        targets = [args.dataset] if args.dataset else list(DATASETS.keys())
-        _add_features(targets, output_dir)
-
-    else:  # compute
-        targets = [args.dataset] if args.dataset else list(DATASETS.keys())
-        for name in targets:
-            print(f"\n=== Precomputing {name} ===")
-            precompute_dataset(
-                name, output_dir,
-                args.n_neighbors, args.min_dist, args.n_components,
-                args.metric, args.scale,
-            )
 
 
 if __name__ == '__main__':
