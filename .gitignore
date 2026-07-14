@@ -34,3 +34,4 @@ env/
 .env
 .env.local
 data/embeddings/*.h5
+data/*.h5ad
