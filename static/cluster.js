@@ -129,8 +129,13 @@ export async function fetchTree() {
       cluster_on: state.clusterOn,
     });
     const resp = await fetch(`/api/cluster/${state.dataset}/tree?${params}`);
-    if (!resp.ok) throw new Error(`Tree API error ${resp.status}`);
-    renderTreePlot(await resp.json());
+    if (!resp.ok) {
+      const detail = await resp.json().catch(() => ({}));
+      throw new Error(detail.detail || `HTTP ${resp.status}`);
+    }
+    const treeData = await resp.json();
+    if (!treeData.bars) throw new Error(`unexpected API response: ${JSON.stringify(treeData).slice(0, 200)}`);
+    renderTreePlot(treeData);
   } catch (e) {
     console.error('Tree fetch failed:', e);
     els.treeWrapper.innerHTML =

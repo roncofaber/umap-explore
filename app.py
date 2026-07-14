@@ -182,19 +182,18 @@ def get_cluster(
 
 
 def _condensed_tree_plot_data(clusterer, palette):
-    """Build Plotly-ready data from the hdbscan condensed tree.
-    Mirrors get_plot_data() but returns JSON-serialisable dicts + color info."""
-    from hdbscan.plots import CondensedTree
-    ct   = CondensedTree(clusterer.condensed_tree_._raw_tree, clusterer.labels_)
-    pd   = ct.get_plot_data(max_rectangle_per_icicle=20)
-    sel  = sorted(clusterer.condensed_tree_._select_clusters())
+    """Build Plotly-ready data from the hdbscan condensed tree using the
+    library's own get_plot_data() method."""
+    ct = clusterer.condensed_tree_          # already a CondensedTree object
+    pd = ct.get_plot_data(max_rectangle_per_icicle=20)
+
+    sel  = sorted(int(x) for x in ct._select_clusters())
     n_cl = len(sel)
 
     selected_info = []
     for i, node in enumerate(sel):
         b = pd['cluster_bounds'].get(node, [0, 0, 0, 0])
-        # Guard against infinite λ values (degenerate data)
-        y_top = float(b[3]) if np.isfinite(b[3]) else float(b[2]) * 2 + 0.1
+        y_top = float(b[3]) if np.isfinite(float(b[3])) else float(b[2]) * 2 + 0.1
         selected_info.append({
             'label':  i,
             'color':  palette[i % len(palette)],
@@ -204,14 +203,14 @@ def _condensed_tree_plot_data(clusterer, palette):
             },
         })
 
-    max_w = max(pd['bar_widths'], default=1)
+    max_w = max((float(x) for x in pd['bar_widths']), default=1.0)
     return {
         'bars': {
-            'centers':           [float(x) for x in pd['bar_centers']],
-            'tops':              [float(x) for x in pd['bar_tops']],
-            'bottoms':           [float(x) for x in pd['bar_bottoms']],
-            'widths':            [float(x) for x in pd['bar_widths']],
-            'sizes_normalized':  [float(x) / max_w for x in pd['bar_widths']],
+            'centers':          [float(x) for x in pd['bar_centers']],
+            'tops':             [float(x) for x in pd['bar_tops']],
+            'bottoms':          [float(x) for x in pd['bar_bottoms']],
+            'widths':           [float(x) for x in pd['bar_widths']],
+            'sizes_normalized': [float(x) / max_w for x in pd['bar_widths']],
         },
         'lines': [
             {'x': [float(xs[0]), float(xs[1])], 'y': [float(ys[0]), float(ys[1])]}
