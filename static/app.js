@@ -235,20 +235,26 @@ const AXIS_BOX = {
   tickfont: TICK_FONT, nticks: 5, tickformat: '.1f',
 };
 
+const MARGIN = { t: 50, r: 80, b: 90, l: 60 };  // l+r = t+b = 140
+
 function makeLayout(emb) {
+  // Lock axes domain in paper coords so a colorbar can never shift the box.
+  const W = els.plot.offsetWidth  || 700;
+  const H = els.plot.offsetHeight || 700;
   return {
-    // l+r = t+b = 140 so the available space is always a perfect square
-    margin: { t: 50, r: 80, b: 90, l: 60 },
+    margin: MARGIN,
     paper_bgcolor: '#eef0f5',
     plot_bgcolor: '#eef0f5',
     showlegend: false,
     xaxis: {
       ...AXIS_BOX,
+      domain: [MARGIN.l / W, 1 - MARGIN.r / W],
       range: axisRange(emb.x),
       title: { text: 'coord 1', font: AXIS_LABEL_FONT, standoff: 6 },
     },
     yaxis: {
       ...AXIS_BOX,
+      domain: [MARGIN.b / H, 1 - MARGIN.t / H],
       range: axisRange(emb.y),
       title: { text: 'coord 2', font: AXIS_LABEL_FONT, standoff: 6 },
     },
