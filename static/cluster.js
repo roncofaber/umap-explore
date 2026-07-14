@@ -20,6 +20,9 @@ export async function fetchTree() {
     const resp = await fetch(`/api/cluster/${state.dataset}/tree?${params}`);
     if (!resp.ok) throw new Error(`Tree API error ${resp.status}`);
     els.treeWrapper.innerHTML = await resp.text();
+    // matplotlib SVGs carry fixed width/height attrs — remove them so CSS controls sizing
+    const svg = els.treeWrapper.querySelector('svg');
+    if (svg) { svg.removeAttribute('width'); svg.removeAttribute('height'); }
   } catch (e) {
     console.error('Tree fetch failed:', e);
     els.treeWrapper.innerHTML = `<p style="color:var(--text-3);padding:2rem">Tree unavailable: ${e.message}</p>`;
