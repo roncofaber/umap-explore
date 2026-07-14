@@ -48,13 +48,15 @@ export function makeTrace(emb) {
     marker.color     = vals;
     marker.colorscale = 'Viridis';
     marker.showscale = true;
+    // Horizontal colorbar sits in the bottom margin above the x-axis label.
+    // Title on top so it doesn't collide with axis tick labels below.
     marker.colorbar  = {
       orientation: 'h',
       x: 0.5, xanchor: 'center',
-      y: MARGIN.b / H - 0.02, yanchor: 'top',
-      thickness: 10, len: 0.6,
+      y: MARGIN.b / H * 0.65, yanchor: 'middle',
+      thickness: 10, len: 0.55,
       tickfont: TICK_FONT,
-      title: { text: fname, font: TICK_FONT, side: 'bottom' },
+      title: { text: fname, font: TICK_FONT, side: 'top' },
     };
 
   } else if (!isContinuous && state.highlightedLabel !== null) {
