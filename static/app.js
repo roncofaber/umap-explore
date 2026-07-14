@@ -9,8 +9,13 @@ const state = {
   metric: 'euclidean',
   scale: 'scaled',
   isFirstRender: true,
-  highlightedLabel: null,   // null = no highlight; integer = highlighted class index
-  colorBy: 'class',         // 'class' or feature index (integer)
+  highlightedLabel: null,
+  colorBy: 'class',
+  tab: 'umap',              // 'umap' | 'hdbscan'
+  minClusterSize: 15,
+  minSamples: 5,
+  clusterSelectionMethod: 'eom',
+  clusterResult: null,      // latest HDBSCAN result from server
 };
 
 const els = {
@@ -34,6 +39,19 @@ const els = {
   colorBySelect:   document.getElementById('color-by-select'),
   colorByGroup:    document.getElementById('color-by-group'),
   resetBtn:        document.getElementById('reset-btn'),
+  // tabs
+  tabUmap:         document.getElementById('tab-umap'),
+  tabHdbscan:      document.getElementById('tab-hdbscan'),
+  contentUmap:     document.getElementById('tab-content-umap'),
+  contentHdbscan:  document.getElementById('tab-content-hdbscan'),
+  // hdbscan controls
+  mcsSlider:       document.getElementById('mcs-slider'),
+  mcsValue:        document.getElementById('mcs-value'),
+  msSlider:        document.getElementById('ms-slider'),
+  msValue:         document.getElementById('ms-value'),
+  csmEom:          document.getElementById('csm-eom'),
+  csmLeaf:         document.getElementById('csm-leaf'),
+  clusterStat:     document.getElementById('cluster-stat'),
   plot:            document.getElementById('plot'),
   legend:          document.getElementById('legend'),
   loading:         document.getElementById('loading'),
@@ -114,6 +132,8 @@ function positionTicks(slider) {
 function positionAllTicks() {
   positionTicks(els.nnSlider);
   positionTicks(els.mdSlider);
+  positionTicks(els.mcsSlider);
+  positionTicks(els.msSlider);
 }
 
 // ── Param status bar ─────────────────────────────────────────────────────────
@@ -158,6 +178,20 @@ function repositionLegend() {
 }
 
 function updateLegend(emb) {
+  if (state.tab === 'hdbscan' && state.clusterResult) {
+    const { cluster_names, cluster_colors, n_noise } = state.clusterResult;
+    const noiseItem = n_noise > 0
+      ? `<div class="legend-item"><span class="legend-dot" style="background:#c0c8d8"></span><span class="legend-label">noise</span></div>`
+      : '';
+    els.legend.innerHTML = cluster_names.map((name, i) =>
+      `<div class="legend-item">
+         <span class="legend-dot" style="background:${cluster_colors[i]}"></span>
+         <span class="legend-label">${name}</span>
+       </div>`
+    ).join('') + noiseItem;
+    return;
+  }
+
   if (emb.label_names === null || state.colorBy !== 'class') {
     els.legend.innerHTML = '';
     return;
@@ -187,7 +221,12 @@ function makeTrace(emb) {
 
   const marker = { size: 5, opacity: 0.8 };
 
-  if (state.colorBy !== 'class') {
+  if (state.tab === 'hdbscan' && state.clusterResult) {
+    const { colors, labels } = state.clusterResult;
+    marker.color = colors;
+    hoverText.splice(0, hoverText.length,
+      ...labels.map(l => l >= 0 ? `cluster ${l}` : 'noise'));
+  } else if (state.colorBy !== 'class') {
     // Color by a specific feature value
     const fd = cachedData[state.dataset]?.[state.scale];
     const vals = fd ? fd.X.map(row => row[state.colorBy]) : emb.labels;
@@ -329,8 +368,12 @@ async function fetchAndRender() {
   try {
     const emb = await fetchEmbedding();
     renderPlot(emb);
-    updateLegend(emb);
-    requestAnimationFrame(repositionLegend);
+    if (state.tab === 'hdbscan') {
+      await fetchAndCluster();
+    } else {
+      updateLegend(emb);
+      requestAnimationFrame(repositionLegend);
+    }
   } catch (e) {
     console.error('Failed to load embedding:', e);
   } finally {
@@ -343,6 +386,93 @@ function scheduleRender() {
   clearTimeout(renderTimer);
   renderTimer = setTimeout(fetchAndRender, 300);
 }
+
+// ── HDBSCAN ───────────────────────────────────────────────────────────────────
+
+const MCS_STEPS = [5, 10, 15, 20, 30, 50];
+const MS_STEPS  = [1,  3,  5, 10, 15, 20];
+
+async function fetchAndCluster() {
+  if (!state.dataset || !currentEmb) return;
+  els.loading.style.display = 'block';
+  try {
+    const params = new URLSearchParams({
+      method: state.method,
+      n_neighbors: state.nNeighbors,
+      min_dist: state.minDist,
+      n_components: 2,
+      metric: state.metric,
+      scale: state.scale,
+      min_cluster_size: state.minClusterSize,
+      min_samples: state.minSamples,
+      cluster_selection_method: state.clusterSelectionMethod,
+    });
+    const resp = await fetch(`/api/cluster/${state.dataset}?${params}`);
+    if (!resp.ok) throw new Error(`API error ${resp.status}`);
+    state.clusterResult = await resp.json();
+    const { n_clusters, n_noise } = state.clusterResult;
+    const pct = ((n_noise / currentEmb.x.length) * 100).toFixed(1);
+    els.clusterStat.textContent =
+      `${n_clusters} cluster${n_clusters !== 1 ? 's' : ''}  ·  ${n_noise} noise points (${pct}%)`;
+    els.clusterStat.hidden = false;
+    rerenderColors();
+  } catch (e) {
+    console.error('Clustering failed:', e);
+  } finally {
+    els.loading.style.display = 'none';
+  }
+}
+
+let clusterTimer = null;
+function scheduleCluster() {
+  clearTimeout(clusterTimer);
+  clusterTimer = setTimeout(fetchAndCluster, 300);
+}
+
+function switchTab(tab) {
+  state.tab = tab;
+  els.tabUmap.classList.toggle('active', tab === 'umap');
+  els.tabHdbscan.classList.toggle('active', tab === 'hdbscan');
+  els.contentUmap.hidden = tab !== 'umap';
+  els.contentHdbscan.hidden = tab !== 'hdbscan';
+
+  if (tab === 'hdbscan') {
+    fetchAndCluster();
+  } else {
+    state.clusterResult = null;
+    els.clusterStat.hidden = true;
+    rerenderColors();
+  }
+}
+
+els.tabUmap.addEventListener('click',    () => switchTab('umap'));
+els.tabHdbscan.addEventListener('click', () => switchTab('hdbscan'));
+
+els.mcsSlider.addEventListener('input', () => {
+  state.minClusterSize = MCS_STEPS[parseInt(els.mcsSlider.value)];
+  els.mcsValue.textContent = state.minClusterSize;
+  scheduleCluster();
+});
+
+els.msSlider.addEventListener('input', () => {
+  state.minSamples = MS_STEPS[parseInt(els.msSlider.value)];
+  els.msValue.textContent = state.minSamples;
+  scheduleCluster();
+});
+
+els.csmEom.addEventListener('click', () => {
+  if (state.clusterSelectionMethod === 'eom') return;
+  state.clusterSelectionMethod = 'eom';
+  els.csmEom.classList.add('active'); els.csmLeaf.classList.remove('active');
+  fetchAndCluster();
+});
+
+els.csmLeaf.addEventListener('click', () => {
+  if (state.clusterSelectionMethod === 'leaf') return;
+  state.clusterSelectionMethod = 'leaf';
+  els.csmLeaf.classList.add('active'); els.csmEom.classList.remove('active');
+  fetchAndCluster();
+});
 
 // ── Highlight ─────────────────────────────────────────────────────────────────
 

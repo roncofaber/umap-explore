@@ -8,6 +8,8 @@ from typing import Literal
 
 import colorcet as cc
 import h5py
+import numpy as np
+import hdbscan as hdbscan_lib
 from datasets.meta import DATASETS_META
 from utils import make_key
 
@@ -96,6 +98,57 @@ def get_data(
         'feature_names': feature_names,
         'labels': labels,
         'label_names': label_names,
+    }
+
+
+@app.get("/api/cluster/{dataset_name}")
+def get_cluster(
+    dataset_name: str,
+    method: Literal['umap', 'pca'] = Query('umap'),
+    n_neighbors: int = Query(15, ge=1),
+    min_dist: float = Query(0.1, ge=0.0, le=2.0),
+    n_components: int = Query(2, ge=2, le=2),
+    metric: Literal['euclidean', 'cosine', 'manhattan', 'correlation'] = Query('euclidean'),
+    scale: Literal['scaled', 'raw'] = Query('scaled'),
+    min_cluster_size: int = Query(15, ge=2),
+    min_samples: int = Query(5, ge=1),
+    cluster_selection_method: Literal['eom', 'leaf'] = Query('eom'),
+):
+    if not re.match(r'^[a-zA-Z0-9_]+$', dataset_name):
+        raise HTTPException(status_code=400, detail="Invalid dataset name")
+    if dataset_name not in DATASETS_META:
+        raise HTTPException(status_code=404, detail=f"Unknown dataset '{dataset_name}'")
+    path = _h5(dataset_name)
+    if not path.exists():
+        raise HTTPException(status_code=404, detail=f"No embeddings for '{dataset_name}'")
+    key = f"pca_{n_components}_{scale}" if method == 'pca' else make_key(n_neighbors, min_dist, n_components, metric, scale)
+    with h5py.File(path, 'r') as f:
+        if key not in f:
+            raise HTTPException(status_code=404, detail=f"No embedding for key '{key}'")
+        x = f[key]['x'][()]
+        y = f[key]['y'][()]
+
+    coords = np.column_stack([x, y])
+    clusterer = hdbscan_lib.HDBSCAN(
+        min_cluster_size=min_cluster_size,
+        min_samples=min_samples,
+        cluster_selection_method=cluster_selection_method,
+    ).fit(coords)
+
+    labels = clusterer.labels_.tolist()
+    unique = sorted(set(l for l in labels if l >= 0))
+    palette = cc.glasbey_dark
+    colors = [palette[l % len(palette)] if l >= 0 else '#c0c8d8' for l in labels]
+    n_clusters = len(unique)
+    n_noise = labels.count(-1)
+
+    return {
+        'labels': labels,
+        'colors': colors,
+        'n_clusters': n_clusters,
+        'n_noise': n_noise,
+        'cluster_names': [f'cluster {i}' for i in unique],
+        'cluster_colors': [palette[i % len(palette)] for i in unique],
     }
 
 

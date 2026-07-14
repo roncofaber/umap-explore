@@ -20,15 +20,8 @@
   <main>
     <button id="sidebar-toggle" class="sidebar-toggle" title="Toggle controls"></button>
     <aside id="controls">
-      <details id="umap-explainer">
-        <summary>What is UMAP?</summary>
-        <p>UMAP (Uniform Manifold Approximation and Projection) finds a low-dimensional map of high-dimensional data that preserves its structure. It works by learning which points are neighbors in the original space, then arranging them so neighbors stay close in the map. Use the controls below to see how each parameter shapes the result.</p>
-        <div class="explainer-links">
-          <a href="https://arxiv.org/abs/1802.03426" target="_blank" rel="noopener">Paper</a>
-          <a href="https://umap-learn.readthedocs.io/" target="_blank" rel="noopener">Docs</a>
-        </div>
-      </details>
 
+      <!-- Dataset — always visible above tabs -->
       <div class="control-group">
         <label class="field-label" for="dataset-select">Dataset</label>
         <select id="dataset-select"></select>
@@ -38,108 +31,185 @@
         </div>
       </div>
 
-      <div class="params-divider">Method</div>
-
-      <div class="control-group">
-        <div class="param-block">
-          <span class="pname">method</span><span class="peq"> = </span>
-          <div class="toggle-group">
-            <button id="method-umap" class="toggle active">UMAP</button>
-            <button id="method-pca" class="toggle">PCA</button>
-          </div>
-        </div>
+      <!-- Tabs -->
+      <div class="sidebar-tabs">
+        <button class="sidebar-tab active" id="tab-umap">UMAP</button>
+        <button class="sidebar-tab" id="tab-hdbscan">HDBSCAN</button>
       </div>
 
-      <div class="params-divider">Preprocessing</div>
+      <!-- ── UMAP tab ── -->
+      <div id="tab-content-umap" class="tab-content">
+        <details id="umap-explainer">
+          <summary>What is UMAP?</summary>
+          <p>UMAP (Uniform Manifold Approximation and Projection) finds a low-dimensional map of high-dimensional data that preserves its structure. It works by learning which points are neighbors in the original space, then arranging them so neighbors stay close in the map. Use the controls below to see how each parameter shapes the result.</p>
+          <div class="explainer-links">
+            <a href="https://arxiv.org/abs/1802.03426" target="_blank" rel="noopener">Paper</a>
+            <a href="https://umap-learn.readthedocs.io/" target="_blank" rel="noopener">Docs</a>
+          </div>
+        </details>
 
-      <div class="control-group">
-        <div class="param-header">
-          <span>StandardScaler</span>
-          <span class="param-q" data-tip="Normalize each feature to zero mean and unit variance before embedding. Disable to see the effect of raw feature scales on the projection.">?</span>
-        </div>
-        <div class="param-block">
-          <span class="pname">StandardScaler</span><span class="peq"> = </span>
-          <div class="toggle-group">
-            <button id="scale-on" class="toggle active">True</button>
-            <button id="scale-off" class="toggle">False</button>
+        <div class="params-divider">Method</div>
+
+        <div class="control-group">
+          <div class="param-block">
+            <span class="pname">method</span><span class="peq"> = </span>
+            <div class="toggle-group">
+              <button id="method-umap" class="toggle active">UMAP</button>
+              <button id="method-pca" class="toggle">PCA</button>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div id="umap-params">
-        <div class="params-divider">
-          Parameters
-          <button id="reset-btn" class="reset-btn" title="Reset to defaults">↺ reset</button>
-        </div>
+        <div class="params-divider">Preprocessing</div>
 
         <div class="control-group">
           <div class="param-header">
-            <span>n_neighbors</span>
-            <span class="param-q" data-tip="How many nearby points UMAP considers when learning data structure. Low values capture fine local detail; high values reveal the global shape.">?</span>
+            <span>StandardScaler</span>
+            <span class="param-q" data-tip="Normalize each feature to zero mean and unit variance before embedding. Disable to see the effect of raw feature scales on the projection.">?</span>
           </div>
           <div class="param-block">
-            <span class="pname">n_neighbors</span><span class="peq"> = </span><span class="pval" id="n-neighbors-value">15</span>
-          </div>
-          <input type="range" id="n-neighbors-slider" min="0" max="6" step="1" value="2">
-          <div class="slider-ticks">
-            <span>5</span><span>10</span><span>15</span><span>20</span><span>30</span><span>50</span><span>100</span>
+            <span class="pname">StandardScaler</span><span class="peq"> = </span>
+            <div class="toggle-group">
+              <button id="scale-on" class="toggle active">True</button>
+              <button id="scale-off" class="toggle">False</button>
+            </div>
           </div>
         </div>
 
-        <div class="control-group">
-          <div class="param-header">
-            <span>min_dist</span>
-            <span class="param-q" data-tip="Minimum distance between points in the layout. Lower values pack clusters tightly; higher values spread them out more evenly.">?</span>
+        <div id="umap-params">
+          <div class="params-divider">
+            Parameters
+            <button id="reset-btn" class="reset-btn" title="Reset to defaults">↺ reset</button>
           </div>
-          <div class="param-block">
-            <span class="pname">min_dist</span><span class="peq"> = </span><span class="pval" id="min-dist-value">0.1</span>
+
+          <div class="control-group">
+            <div class="param-header">
+              <span>n_neighbors</span>
+              <span class="param-q" data-tip="How many nearby points UMAP considers when learning data structure. Low values capture fine local detail; high values reveal the global shape.">?</span>
+            </div>
+            <div class="param-block">
+              <span class="pname">n_neighbors</span><span class="peq"> = </span><span class="pval" id="n-neighbors-value">15</span>
+            </div>
+            <input type="range" id="n-neighbors-slider" min="0" max="6" step="1" value="2">
+            <div class="slider-ticks">
+              <span>5</span><span>10</span><span>15</span><span>20</span><span>30</span><span>50</span><span>100</span>
+            </div>
           </div>
-          <input type="range" id="min-dist-slider" min="0" max="5" step="1" value="2">
-          <div class="slider-ticks">
-            <span>0</span><span>.05</span><span>.1</span><span>.25</span><span>.5</span><span>1</span>
+
+          <div class="control-group">
+            <div class="param-header">
+              <span>min_dist</span>
+              <span class="param-q" data-tip="Minimum distance between points in the layout. Lower values pack clusters tightly; higher values spread them out more evenly.">?</span>
+            </div>
+            <div class="param-block">
+              <span class="pname">min_dist</span><span class="peq"> = </span><span class="pval" id="min-dist-value">0.1</span>
+            </div>
+            <input type="range" id="min-dist-slider" min="0" max="5" step="1" value="2">
+            <div class="slider-ticks">
+              <span>0</span><span>.05</span><span>.1</span><span>.25</span><span>.5</span><span>1</span>
+            </div>
+          </div>
+
+          <div class="control-group">
+            <div class="param-header">
+              <span>metric</span>
+              <span class="param-q" data-tip="How distances between points are measured in the original space. Different metrics can reveal very different structure in your data.">?</span>
+            </div>
+            <div class="param-block">
+              <span class="pname">metric</span><span class="peq"> = </span>
+              <span class="pval-wrap">
+                <select id="metric-select" class="pval-select">
+                  <option value="euclidean">euclidean</option>
+                  <option value="cosine">cosine</option>
+                  <option value="manhattan">manhattan</option>
+                  <option value="correlation">correlation</option>
+                </select>
+                <span class="pval-caret">▾</span>
+              </span>
+            </div>
           </div>
         </div>
 
-        <div class="control-group">
+        <div class="control-group" id="color-by-group" hidden>
           <div class="param-header">
-            <span>metric</span>
-            <span class="param-q" data-tip="How distances between points are measured in the original space. Different metrics can reveal very different structure in your data.">?</span>
+            <span>color_by</span>
+            <span class="param-q" data-tip="Color points by class label or by the value of any individual feature.">?</span>
           </div>
           <div class="param-block">
-            <span class="pname">metric</span><span class="peq"> = </span>
+            <span class="pname">color_by</span><span class="peq"> = </span>
             <span class="pval-wrap">
-              <select id="metric-select" class="pval-select">
-                <option value="euclidean">euclidean</option>
-                <option value="cosine">cosine</option>
-                <option value="manhattan">manhattan</option>
-                <option value="correlation">correlation</option>
+              <select id="color-by-select" class="pval-select">
+                <option value="class">class</option>
               </select>
               <span class="pval-caret">▾</span>
             </span>
           </div>
         </div>
-      </div>
 
-      <div class="control-group" id="color-by-group" hidden>
-        <div class="param-header">
-          <span>color_by</span>
-          <span class="param-q" data-tip="Color points by class label or by the value of any individual feature.">?</span>
+        <div class="bottom-actions">
+          <button id="show-code-btn" class="action-btn">{ } code</button>
+          <button id="view-data-btn" class="action-btn">⊞ data</button>
         </div>
-        <div class="param-block">
-          <span class="pname">color_by</span><span class="peq"> = </span>
-          <span class="pval-wrap">
-            <select id="color-by-select" class="pval-select">
-              <option value="class">class</option>
-            </select>
-            <span class="pval-caret">▾</span>
-          </span>
-        </div>
-      </div>
+      </div><!-- /tab-content-umap -->
 
-      <div class="bottom-actions">
-        <button id="show-code-btn" class="action-btn">{ } code</button>
-        <button id="view-data-btn" class="action-btn">⊞ data</button>
-      </div>
+      <!-- ── HDBSCAN tab ── -->
+      <div id="tab-content-hdbscan" class="tab-content" hidden>
+        <details id="hdbscan-explainer">
+          <summary>What is HDBSCAN?</summary>
+          <p>HDBSCAN finds clusters of varying density without requiring you to specify the number of clusters in advance. Points that don't belong to any cluster are labeled as noise. It runs here on the current UMAP embedding.</p>
+          <div class="explainer-links">
+            <a href="https://hdbscan.readthedocs.io/" target="_blank" rel="noopener">Docs</a>
+            <a href="https://arxiv.org/abs/1911.02282" target="_blank" rel="noopener">Paper</a>
+          </div>
+        </details>
+
+        <div class="params-divider">Parameters</div>
+
+        <div class="control-group">
+          <div class="param-header">
+            <span>min_cluster_size</span>
+            <span class="param-q" data-tip="The minimum number of points to form a cluster. This is the primary parameter — set it to the smallest group size you consider meaningful.">?</span>
+          </div>
+          <div class="param-block">
+            <span class="pname">min_cluster_size</span><span class="peq"> = </span><span class="pval" id="mcs-value">15</span>
+          </div>
+          <input type="range" id="mcs-slider" min="0" max="5" step="1" value="2">
+          <div class="slider-ticks">
+            <span>5</span><span>10</span><span>15</span><span>20</span><span>30</span><span>50</span>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <div class="param-header">
+            <span>min_samples</span>
+            <span class="param-q" data-tip="Controls how conservative clustering is. Larger values declare more points as noise and restrict clusters to denser regions. Defaults to min_cluster_size if not set.">?</span>
+          </div>
+          <div class="param-block">
+            <span class="pname">min_samples</span><span class="peq"> = </span><span class="pval" id="ms-value">5</span>
+          </div>
+          <input type="range" id="ms-slider" min="0" max="5" step="1" value="2">
+          <div class="slider-ticks">
+            <span>1</span><span>3</span><span>5</span><span>10</span><span>15</span><span>20</span>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <div class="param-header">
+            <span>cluster_selection_method</span>
+            <span class="param-q" data-tip="'eom' (Excess of Mass) tends to find a few large clusters. 'leaf' finds many smaller, more homogeneous clusters.">?</span>
+          </div>
+          <div class="param-block">
+            <span class="pname">cluster_selection_method</span><span class="peq"> = </span>
+            <div class="toggle-group">
+              <button id="csm-eom" class="toggle active">eom</button>
+              <button id="csm-leaf" class="toggle">leaf</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="cluster-stat" class="cluster-stat" hidden></div>
+      </div><!-- /tab-content-hdbscan -->
+
     </aside>
 
     <div id="data-modal" class="code-modal" hidden>
