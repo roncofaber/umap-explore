@@ -7,6 +7,7 @@ import { updateLegend, toggleHighlight, toggleClusterHighlight, rerenderColors }
 import { fetchAndCluster, switchTab, initClusterControls, setClusterView } from './cluster.js';
 import { initCodeModal, initDataModal } from './modals.js';
 import {
+  updateDatasetInfo, updateColorByOptions, onColorByChange,
   initSidebarToggle, positionAllTicks, initTooltips, setLoading,
 } from './ui.js';
 
