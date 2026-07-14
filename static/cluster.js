@@ -4,8 +4,6 @@ import { MCS_STEPS, MS_STEPS, CSE_STEPS } from './constants.js';
 import { fetchClusterResult } from './api.js';
 import { updateLegend, rerenderColors } from './legend.js';
 import { positionAllTicks, setLoading } from './ui.js';
-export { fetchTree, setClusterView };
-
 export async function fetchTree() {
   if (!state.dataset) return;
   setLoading('rendering tree…');
