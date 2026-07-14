@@ -237,7 +237,8 @@ const AXIS_BOX = {
 
 function makeLayout(emb) {
   return {
-    margin: { t: 30, r: 80, b: 65, l: 70 },
+    // l+r = t+b = 140 so the available space is always a perfect square
+    margin: { t: 50, r: 80, b: 90, l: 60 },
     paper_bgcolor: '#eef0f5',
     plot_bgcolor: '#eef0f5',
     showlegend: false,
@@ -249,8 +250,6 @@ function makeLayout(emb) {
     yaxis: {
       ...AXIS_BOX,
       range: axisRange(emb.y),
-      scaleanchor: 'x',
-      scaleratio: 1,
       title: { text: 'coord 2', font: AXIS_LABEL_FONT, standoff: 6 },
     },
   };
