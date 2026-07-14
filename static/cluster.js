@@ -117,6 +117,7 @@ function renderTreePlot(data) {
 
 export async function fetchTree() {
   if (!state.dataset) return;
+  els.treeWrapper.style.opacity = '0';
   setLoading('rendering tree…');
   try {
     const params = new URLSearchParams({
@@ -146,10 +147,12 @@ export async function fetchTree() {
     };
     rerenderColors();
     renderTreePlot(treeData);
+    requestAnimationFrame(() => { els.treeWrapper.style.opacity = '1'; });
   } catch (e) {
     console.error('Tree fetch failed:', e);
     els.treeWrapper.innerHTML =
       `<p style="color:var(--text-3);padding:2rem;text-align:center">Tree unavailable: ${e.message}</p>`;
+    els.treeWrapper.style.opacity = '1';
   } finally {
     setLoading(null);
   }

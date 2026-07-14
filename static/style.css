@@ -850,6 +850,7 @@ input[type="range"]::-moz-range-thumb {
   width: min(100%, 900px);
   max-width: 900px;
   height: min(calc(100svh - 48px - 3rem), 500px);
+  transition: opacity 0.25s ease;
 }
 
 #tree-wrapper[hidden] { display: none; }  /* prevent height from leaking into flex layout */
