@@ -119,68 +119,73 @@ def _align_dataset(dataset_name, output_dir: Path,
                    n_neighbors_list, min_dist_list, n_components_list,
                    metrics_list, scales_list):
     """
-    For each (metric, scale, n_components) group, align all UMAP embeddings to a
-    reference using the Orthogonal Procrustes transformation (rotation + optional
-    reflection, no scaling).  Aligned coordinates are stored as x_aligned / y_aligned
-    alongside the original x / y — originals are never modified.
+    Align ALL embeddings in the dataset (UMAP across all params, PCA, all metrics
+    and scales) to a single universal reference using Orthogonal Procrustes
+    (rotation + optional reflection, no scaling).
 
-    Reference: embedding with the largest n_neighbors and min_dist=0.1
-    (stable global structure, near-default compactness).
+    Reference: UMAP with standard parameters — n_neighbors=15, min_dist=0.1,
+    metric=euclidean, scale=scaled.  If that key is absent, falls back to the
+    first available key.
+
+    Aligned coordinates are stored as x_aligned / y_aligned alongside the
+    original x / y — originals are never modified.
     """
     path = output_dir / f'{dataset_name}.h5'
     if not path.exists():
         print(f'{dataset_name}: no HDF5 file, skipping')
         return
 
-    ref_nn  = max(n_neighbors_list)
-    ref_md  = 0.1 if 0.1 in min_dist_list else min_dist_list[len(min_dist_list) // 2]
+    # Universal reference: standard UMAP parameters
+    ref_nn = 15  if 15  in n_neighbors_list  else n_neighbors_list[0]
+    ref_md = 0.1 if 0.1 in min_dist_list     else min_dist_list[0]
+    ref_key = make_key(ref_nn, ref_md, 2, 'euclidean', 'scaled')
+
+    # Collect every embedding key that should be aligned
+    all_keys = [
+        make_key(nn, md, nc, metric, scale)
+        for nn, md, nc, metric, scale in itertools.product(
+            n_neighbors_list, min_dist_list, n_components_list,
+            metrics_list, scales_list)
+    ] + [f'pca_2_{scale}' for scale in scales_list]
 
     with h5py.File(path, 'a') as f:
-        for nc, metric, scale in itertools.product(n_components_list, metrics_list, scales_list):
-            ref_key = make_key(ref_nn, ref_md, nc, metric, scale)
-            if ref_key not in f:
-                print(f'  {metric}/{scale}: reference key {ref_key!r} missing, skipping group')
+        # Find the reference; fall back to first available key if missing
+        if ref_key not in f:
+            fallback = next((k for k in all_keys if k in f), None)
+            if fallback is None:
+                print(f'{dataset_name}: no embeddings found, skipping')
+                return
+            print(f'{dataset_name}: reference {ref_key!r} missing, using {fallback!r}')
+            ref_key = fallback
+
+        ref   = np.column_stack([f[ref_key]['x'][()], f[ref_key]['y'][()]])
+        ref_mu = ref.mean(axis=0)
+        ref_c  = ref - ref_mu
+
+        aligned_count = 0
+        for key in all_keys:
+            if key not in f:
+                continue
+            if key == ref_key:
+                for ax in ('x_aligned', 'y_aligned'):
+                    if ax in f[key]: del f[key][ax]
+                f[key].create_dataset('x_aligned', data=f[key]['x'][()])
+                f[key].create_dataset('y_aligned', data=f[key]['y'][()])
+                aligned_count += 1
                 continue
 
-            ref = np.column_stack([f[ref_key]['x'][()], f[ref_key]['y'][()]])
-            ref_mu = ref.mean(axis=0)
-            ref_c  = ref - ref_mu
+            tgt   = np.column_stack([f[key]['x'][()], f[key]['y'][()]])
+            tgt_c = tgt - tgt.mean(axis=0)
+            Q, _  = orthogonal_procrustes(tgt_c, ref_c)
+            aligned = tgt_c @ Q + ref_mu
 
-            aligned_count = 0
-            for nn, md in itertools.product(n_neighbors_list, min_dist_list):
-                key = make_key(nn, md, nc, metric, scale)
-                if key not in f:
-                    continue
-                if key == ref_key:
-                    # Reference aligns to itself: just copy x/y into x_aligned/y_aligned
-                    for ax in ('x_aligned', 'y_aligned'):
-                        if ax in f[key]:
-                            del f[key][ax]
-                    f[key].create_dataset('x_aligned', data=f[key]['x'][()])
-                    f[key].create_dataset('y_aligned', data=f[key]['y'][()])
-                    aligned_count += 1
-                    continue
+            for ax in ('x_aligned', 'y_aligned'):
+                if ax in f[key]: del f[key][ax]
+            f[key].create_dataset('x_aligned', data=aligned[:, 0])
+            f[key].create_dataset('y_aligned', data=aligned[:, 1])
+            aligned_count += 1
 
-                tgt = np.column_stack([f[key]['x'][()], f[key]['y'][()]])
-                tgt_mu = tgt.mean(axis=0)
-                tgt_c  = tgt - tgt_mu
-
-                # Orthogonal Procrustes: find Q (rotation + reflection) minimising
-                # ||tgt_c @ Q - ref_c||_F.  scipy allows det = ±1 → handles inversions.
-                Q, _ = orthogonal_procrustes(tgt_c, ref_c)
-                aligned = tgt_c @ Q + ref_mu
-
-                for ax in ('x_aligned', 'y_aligned'):
-                    if ax in f[key]:
-                        del f[key][ax]
-                f[key].create_dataset('x_aligned', data=aligned[:, 0])
-                f[key].create_dataset('y_aligned', data=aligned[:, 1])
-                aligned_count += 1
-
-            print(f'  {metric}/{scale}: aligned {aligned_count} embeddings '
-                  f'(ref: n_neighbors={ref_nn}, min_dist={ref_md})')
-
-    print(f'{dataset_name}: alignment complete')
+    print(f'{dataset_name}: aligned {aligned_count} embeddings to ref={ref_key}')
 
 
 # ── JSON → HDF5 migration ──────────────────────────────────────────────────────
