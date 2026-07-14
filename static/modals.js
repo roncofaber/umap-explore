@@ -83,7 +83,7 @@ export function initCodeModal() {
       const orig = copyBtn.textContent;
       copyBtn.textContent = 'Copied!';
       setTimeout(() => { copyBtn.textContent = orig; }, 1500);
-    });
+    }).catch(() => {});
   });
 
   return { modal };

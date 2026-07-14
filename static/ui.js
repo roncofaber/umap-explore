@@ -50,7 +50,14 @@ export async function onColorByChange() {
   const val = els.colorBySelect.value;
   state.colorBy = val === 'class' ? 'class' : parseInt(val);
   state.highlightedLabel = null;
-  if (state.colorBy !== 'class') await ensureFeatureData();
+  if (state.colorBy !== 'class') {
+    const data = await ensureFeatureData();
+    if (!data) {
+      state.colorBy = 'class';
+      els.colorBySelect.value = 'class';
+      return;
+    }
+  }
   rerenderColors();
 }
 

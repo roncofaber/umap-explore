@@ -101,7 +101,7 @@ function renderTreePlot(data) {
     if (!ev.points.length) return;
     const px = ev.points[0].x;
     // lambda value is base + top (base=bottom, y=height)
-    const py = ev.points[0].base + ev.points[0].y * 0.5;
+    const py = (ev.points[0].base + ev.points[0].y) / 2;
     const hit = selected_clusters.find(c =>
       px >= c.bounds.x_left && px <= c.bounds.x_right &&
       py >= c.bounds.y_bottom && py <= c.bounds.y_top
@@ -134,6 +134,16 @@ export async function fetchTree() {
     }
     const treeData = await resp.json();
     if (!treeData.bars) throw new Error(`unexpected API response: ${JSON.stringify(treeData).slice(0, 200)}`);
+    // Tree endpoint returns scatter data too — update state so rerenderColors works.
+    state.clusterResult = {
+      labels:         treeData.labels,
+      colors:         treeData.colors,
+      n_clusters:     treeData.n_clusters,
+      n_noise:        treeData.n_noise,
+      cluster_names:  treeData.cluster_names,
+      cluster_colors: treeData.cluster_colors,
+    };
+    rerenderColors();
     renderTreePlot(treeData);
   } catch (e) {
     console.error('Tree fetch failed:', e);
@@ -157,6 +167,8 @@ export function setClusterView(view) {
 
 export async function fetchAndCluster() {
   if (!state.dataset) return;
+  // Tree view: use the combined tree endpoint (scatter + tree in one HDBSCAN fit).
+  if (state.clusterView === 'tree') { await fetchTree(); return; }
   const msg = state.clusterOn === 'data'
     ? 'clustering high-dimensional data…'
     : 'clustering…';
@@ -165,7 +177,6 @@ export async function fetchAndCluster() {
     const result = await fetchClusterResult();
     state.clusterResult = result;
     rerenderColors();
-    if (state.clusterView === 'tree') fetchTree();
   } catch (e) {
     console.error('Clustering failed:', e);
   } finally {

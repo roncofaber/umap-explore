@@ -247,13 +247,26 @@ def get_cluster_tree(
 
     coords = _get_cluster_coords(dataset_name, method, n_neighbors, min_dist,
                                   n_components, metric, scale, cluster_on, path)
+    palette = cc.glasbey_dark
     clusterer = hdbscan_lib.HDBSCAN(
         **_hdbscan_params(min_cluster_size, min_samples, cluster_selection_method,
                           cluster_selection_epsilon, allow_single_cluster)
     ).fit(coords)
 
-    data = _condensed_tree_plot_data(clusterer, cc.glasbey_dark)
-    data['epsilon'] = cluster_selection_epsilon
+    labels = clusterer.labels_.tolist()
+    unique = sorted(set(l for l in labels if l >= 0))
+    colors = [palette[l % len(palette)] if l >= 0 else '#c0c8d8' for l in labels]
+
+    data = _condensed_tree_plot_data(clusterer, palette)
+    data.update({
+        'epsilon': cluster_selection_epsilon,
+        'labels': labels,
+        'colors': colors,
+        'n_clusters': len(unique),
+        'n_noise': labels.count(-1),
+        'cluster_names': [f'cluster {i}' for i in unique],
+        'cluster_colors': [palette[i % len(palette)] for i in unique],
+    })
     return data
 
 

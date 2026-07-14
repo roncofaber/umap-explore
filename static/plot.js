@@ -131,6 +131,9 @@ export function makeTrace(emb) {
 export function makeLayout(emb) {
   const W = els.plot.offsetWidth  || 700;
   const H = els.plot.offsetHeight || 700;
+  const evr = state.method === 'pca' ? state.explainedVarianceRatio : null;
+  const xTitle = evr ? `coord 1  (${(evr[0] * 100).toFixed(1)}%)` : 'coord 1';
+  const yTitle = evr ? `coord 2  (${(evr[1] * 100).toFixed(1)}%)` : 'coord 2';
   return {
     margin: MARGIN,
     paper_bgcolor: '#eef0f5',
@@ -148,13 +151,13 @@ export function makeLayout(emb) {
       ...AXIS_BOX,
       domain: [MARGIN.l / W, 1 - MARGIN.r / W],
       range: axisRange(emb.x),
-      title: { text: 'coord 1', font: AXIS_LABEL_FONT, standoff: 6 },
+      title: { text: xTitle, font: AXIS_LABEL_FONT, standoff: 6 },
     },
     yaxis: {
       ...AXIS_BOX,
       domain: [MARGIN.b / H, 1 - MARGIN.t / H],
       range: axisRange(emb.y),
-      title: { text: 'coord 2', font: AXIS_LABEL_FONT, standoff: 6 },
+      title: { text: yTitle, font: AXIS_LABEL_FONT, standoff: 6 },
     },
   };
 }
