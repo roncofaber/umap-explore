@@ -834,3 +834,32 @@ input[type="range"]::-moz-range-thumb {
   input[type="range"]::-webkit-slider-thumb { transition: none; }
   #umap-explainer summary::before { transition: none; }
 }
+
+/* ── Mobile / narrow screens ─────────────── */
+@media (max-width: 640px) {
+  /* Sidebar becomes a floating overlay, not a flex sibling */
+  #controls {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    z-index: 40;
+    box-shadow: 4px 0 20px rgba(0,0,0,0.15);
+  }
+
+  /* Sidebar hidden by default on mobile */
+  #controls:not(.mobile-open) {
+    width: 0 !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Toggle button sits at the left edge regardless */
+  .sidebar-toggle {
+    left: 0 !important;
+  }
+
+  .sidebar-toggle.mobile-open {
+    left: 290px !important;
+  }
+}

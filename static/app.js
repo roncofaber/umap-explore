@@ -92,13 +92,24 @@ const datasetInfo = {};
 
 // ── Sidebar collapse ──────────────────────────────────────────────────────────
 
+const isMobile = () => window.innerWidth <= 640;
+
 function updateToggleLabel() {
-  els.sidebarToggle.textContent = els.sidebar.classList.contains('collapsed') ? '›' : '‹';
+  const hidden = isMobile()
+    ? !els.sidebar.classList.contains('mobile-open')
+    : els.sidebar.classList.contains('collapsed');
+  els.sidebarToggle.textContent = hidden ? '›' : '‹';
 }
 
 els.sidebarToggle.addEventListener('click', () => {
-  const collapsed = els.sidebar.classList.toggle('collapsed');
-  els.sidebarToggle.classList.toggle('collapsed', collapsed);
+  if (isMobile()) {
+    const open = els.sidebar.classList.toggle('mobile-open');
+    els.sidebarToggle.classList.toggle('mobile-open', open);
+    if (open) requestAnimationFrame(positionAllTicks);
+  } else {
+    const collapsed = els.sidebar.classList.toggle('collapsed');
+    els.sidebarToggle.classList.toggle('collapsed', collapsed);
+  }
   updateToggleLabel();
   requestAnimationFrame(() => { Plotly.relayout(els.plot, {}); repositionLegend(); });
 });
