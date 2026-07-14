@@ -74,7 +74,7 @@ function renderTreePlot(data) {
     annotations.push({
       x: 1, xref: 'paper', y: ly, xanchor: 'right', yanchor: 'bottom',
       text: `ε = ${epsilon}`, showarrow: false,
-      font: { color: '#e05252', size: 11, family: MONO },
+      font: { color: '#e05252', size: 11, family: "'JetBrains Mono', monospace" },
     });
   }
 
