@@ -39,7 +39,7 @@
 
       <!-- ── UMAP tab ── -->
       <div id="tab-content-umap" class="tab-content">
-        <details id="umap-explainer">
+        <details id="umap-explainer" class="section-explainer">
           <summary>What is UMAP?</summary>
           <p>UMAP (Uniform Manifold Approximation and Projection) finds a low-dimensional map of high-dimensional data that preserves its structure. It works by learning which points are neighbors in the original space, then arranging them so neighbors stay close in the map. Use the controls below to see how each parameter shapes the result.</p>
           <div class="explainer-links">
@@ -137,7 +137,7 @@
 
       <!-- ── HDBSCAN tab ── -->
       <div id="tab-content-hdbscan" class="tab-content" hidden>
-        <details id="hdbscan-explainer">
+        <details id="hdbscan-explainer" class="section-explainer">
           <summary>What is HDBSCAN?</summary>
           <p>HDBSCAN finds clusters of varying density without requiring you to specify the number of clusters in advance. Points that don't belong to any cluster are labeled as noise. It runs here on the current UMAP embedding.</p>
           <div class="explainer-links">
