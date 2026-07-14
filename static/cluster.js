@@ -51,7 +51,7 @@ function renderTreePlot(data) {
       line: { color: c.color, width: 2.5 },
     });
     annotations.push({
-      x: (x_left + x_right) / 2, y: y_top,
+      x: (x_left + x_right) / 2, y: y_bottom,
       text: `cluster ${c.label}`,
       showarrow: false, yanchor: 'bottom',
       font: { color: c.color, size: 11, family: SANS },
@@ -72,7 +72,7 @@ function renderTreePlot(data) {
       line: { color: '#e05252', width: 1.5, dash: 'dash' },
     });
     annotations.push({
-      x: 1, xref: 'paper', y: ly, xanchor: 'right', yanchor: 'bottom',
+      x: 1, xref: 'paper', y: ly, xanchor: 'right', yanchor: 'top',
       text: `ε = ${epsilon}`, showarrow: false,
       font: { color: '#e05252', size: 11, family: "'JetBrains Mono', monospace" },
     });
@@ -89,6 +89,7 @@ function renderTreePlot(data) {
     xaxis: { visible: false, showgrid: false, zeroline: false },
     yaxis: {
       title: { text: 'λ  (1 / distance)', font: AXIS_LABEL_FONT, standoff: 6 },
+      autorange: 'reversed',
       showgrid: false, zeroline: false,
       showline: true, linecolor: '#000', linewidth: 1.5,
       ticks: 'outside', ticklen: 4, tickwidth: 1, tickcolor: '#c0c8d8',
