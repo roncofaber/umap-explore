@@ -110,18 +110,12 @@
               <span>metric</span>
               <span class="param-q" data-tip="How distances between points are measured in the original space. Different metrics can reveal very different structure in your data.">?</span>
             </div>
-            <div class="param-block">
-              <span class="pname">metric</span><span class="peq"> = </span>
-              <span class="pval-wrap">
-                <select id="metric-select" class="pval-select">
-                  <option value="euclidean">euclidean</option>
-                  <option value="cosine">cosine</option>
-                  <option value="manhattan">manhattan</option>
-                  <option value="correlation">correlation</option>
-                </select>
-                <span class="pval-caret">▾</span>
-              </span>
-            </div>
+            <select id="metric-select" class="param-select">
+              <option value="euclidean">euclidean</option>
+              <option value="cosine">cosine</option>
+              <option value="manhattan">manhattan</option>
+              <option value="correlation">correlation</option>
+            </select>
           </div>
         </div>
 
@@ -130,15 +124,9 @@
             <span>color_by</span>
             <span class="param-q" data-tip="Color points by class label or by the value of any individual feature.">?</span>
           </div>
-          <div class="param-block">
-            <span class="pname">color_by</span><span class="peq"> = </span>
-            <span class="pval-wrap">
-              <select id="color-by-select" class="pval-select">
-                <option value="class">class</option>
-              </select>
-              <span class="pval-caret">▾</span>
-            </span>
-          </div>
+          <select id="color-by-select" class="param-select">
+            <option value="class">class</option>
+          </select>
         </div>
 
         <div class="bottom-actions">
