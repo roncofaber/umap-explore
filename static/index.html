@@ -128,10 +128,6 @@
           </select>
         </div>
 
-        <div class="bottom-actions">
-          <button id="show-code-btn" class="action-btn">{ } code</button>
-          <button id="view-data-btn" class="action-btn">⊞ data</button>
-        </div>
       </div><!-- /tab-content-umap -->
 
       <!-- ── HDBSCAN tab ── -->
@@ -193,7 +189,7 @@
           <div class="param-header">
             <span>cluster_selection_epsilon</span>
             <span class="param-value" id="cse-value">0</span>
-            <span class="param-q" data-tip="Minimum distance threshold below which clusters are not split further. Merges nearby micro-clusters. 0 = standard HDBSCAN behaviour.">?</span>
+            <span class="param-q" data-tip="Distance threshold (same units as the metric). Clusters closer than ε are merged rather than split. In the tree, the dashed line marks λ = 1/ε. Set to 0 for standard HDBSCAN.">?</span>
           </div>
           <input type="range" id="cse-slider" min="0" max="4" step="1" value="0">
           <div class="slider-ticks">
@@ -229,6 +225,11 @@
 
         <div id="cluster-stat" class="cluster-stat" hidden></div>
       </div><!-- /tab-content-hdbscan -->
+
+      <div class="bottom-actions">
+        <button id="show-code-btn" class="action-btn">{ } code</button>
+        <button id="view-data-btn" class="action-btn">⊞ data</button>
+      </div>
 
     </aside>
 

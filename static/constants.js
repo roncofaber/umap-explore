@@ -46,4 +46,16 @@ export const DATASET_CODE = {
     imports: 'from sklearn.datasets import load_breast_cancer',
     load: 'data = load_breast_cancer()\nX = data.data',
   },
+  penguins: {
+    imports: "import pandas as pd",
+    load: "df = pd.read_csv('penguins.csv').dropna()\nfeatures = ['bill_length_mm', 'bill_depth_mm', 'flipper_length_mm', 'body_mass_g']\nX = df[features].values",
+  },
+  olivetti_faces: {
+    imports: 'from sklearn.datasets import fetch_olivetti_faces',
+    load: 'data = fetch_olivetti_faces(shuffle=True, random_state=42)\nX = data.data',
+  },
+  pbmc3k: {
+    imports: 'import scanpy as sc',
+    load: "adata = sc.datasets.pbmc3k_processed()\nX = adata.obsm['X_pca']  # 50 PCA components",
+  },
 };
