@@ -5,6 +5,12 @@ Usage
 # Compute embeddings (default action):
 python precompute.py [--dataset NAME] [--output-dir DIR] [--n-neighbors ...] ...
 
+# Align embeddings via Procrustes (rotation + reflection, no scaling):
+python precompute.py --action align [--dataset NAME] [--output-dir DIR]
+  Adds x_aligned / y_aligned datasets alongside the original x / y.
+  Reference per (metric, scale) group: largest n_neighbors, min_dist=0.1.
+  Safe: original coordinates are never modified.
+
 # Convert legacy JSON embeddings to HDF5 (one-time migration):
 python precompute.py --action convert-json [--output-dir DIR]
 
@@ -20,6 +26,7 @@ from pathlib import Path
 import h5py
 import numpy as np
 import umap
+from scipy.linalg import orthogonal_procrustes
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
@@ -102,6 +109,76 @@ def precompute_dataset(dataset_name, output_dir, n_neighbors_list, min_dist_list
     print(f"Done. Saved to {out_file}")
 
 
+# ── Procrustes alignment ──────────────────────────────────────────────────────
+
+def _align_dataset(dataset_name, output_dir: Path,
+                   n_neighbors_list, min_dist_list, n_components_list,
+                   metrics_list, scales_list):
+    """
+    For each (metric, scale, n_components) group, align all UMAP embeddings to a
+    reference using the Orthogonal Procrustes transformation (rotation + optional
+    reflection, no scaling).  Aligned coordinates are stored as x_aligned / y_aligned
+    alongside the original x / y — originals are never modified.
+
+    Reference: embedding with the largest n_neighbors and min_dist=0.1
+    (stable global structure, near-default compactness).
+    """
+    path = output_dir / f'{dataset_name}.h5'
+    if not path.exists():
+        print(f'{dataset_name}: no HDF5 file, skipping')
+        return
+
+    ref_nn  = max(n_neighbors_list)
+    ref_md  = 0.1 if 0.1 in min_dist_list else min_dist_list[len(min_dist_list) // 2]
+
+    with h5py.File(path, 'a') as f:
+        for nc, metric, scale in itertools.product(n_components_list, metrics_list, scales_list):
+            ref_key = make_key(ref_nn, ref_md, nc, metric, scale)
+            if ref_key not in f:
+                print(f'  {metric}/{scale}: reference key {ref_key!r} missing, skipping group')
+                continue
+
+            ref = np.column_stack([f[ref_key]['x'][()], f[ref_key]['y'][()]])
+            ref_mu = ref.mean(axis=0)
+            ref_c  = ref - ref_mu
+
+            aligned_count = 0
+            for nn, md in itertools.product(n_neighbors_list, min_dist_list):
+                key = make_key(nn, md, nc, metric, scale)
+                if key not in f:
+                    continue
+                if key == ref_key:
+                    # Reference aligns to itself: just copy x/y into x_aligned/y_aligned
+                    for ax in ('x_aligned', 'y_aligned'):
+                        if ax in f[key]:
+                            del f[key][ax]
+                    f[key].create_dataset('x_aligned', data=f[key]['x'][()])
+                    f[key].create_dataset('y_aligned', data=f[key]['y'][()])
+                    aligned_count += 1
+                    continue
+
+                tgt = np.column_stack([f[key]['x'][()], f[key]['y'][()]])
+                tgt_mu = tgt.mean(axis=0)
+                tgt_c  = tgt - tgt_mu
+
+                # Orthogonal Procrustes: find Q (rotation + reflection) minimising
+                # ||tgt_c @ Q - ref_c||_F.  scipy allows det = ±1 → handles inversions.
+                Q, _ = orthogonal_procrustes(tgt_c, ref_c)
+                aligned = tgt_c @ Q + ref_mu
+
+                for ax in ('x_aligned', 'y_aligned'):
+                    if ax in f[key]:
+                        del f[key][ax]
+                f[key].create_dataset('x_aligned', data=aligned[:, 0])
+                f[key].create_dataset('y_aligned', data=aligned[:, 1])
+                aligned_count += 1
+
+            print(f'  {metric}/{scale}: aligned {aligned_count} embeddings '
+                  f'(ref: n_neighbors={ref_nn}, min_dist={ref_md})')
+
+    print(f'{dataset_name}: alignment complete')
+
+
 # ── JSON → HDF5 migration ──────────────────────────────────────────────────────
 
 def _convert_json_to_h5(output_dir: Path):
@@ -182,7 +259,8 @@ def _add_features(dataset_names, output_dir: Path):
 def main():
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('--action', choices=['compute', 'convert-json', 'add-features'],
+    parser.add_argument('--action',
+                        choices=['compute', 'align', 'convert-json', 'add-features'],
                         default='compute')
     parser.add_argument('--dataset', choices=list(DATASETS.keys()))
     parser.add_argument('--output-dir', default='data/embeddings')
@@ -197,7 +275,17 @@ def main():
 
     output_dir = Path(args.output_dir)
 
-    if args.action == 'convert-json':
+    if args.action == 'align':
+        targets = [args.dataset] if args.dataset else list(DATASETS.keys())
+        for name in targets:
+            print(f"\n=== Aligning {name} ===")
+            _align_dataset(
+                name, output_dir,
+                args.n_neighbors, args.min_dist, args.n_components,
+                args.metric, args.scale,
+            )
+
+    elif args.action == 'convert-json':
         _convert_json_to_h5(output_dir)
 
     elif args.action == 'add-features':

@@ -188,12 +188,17 @@ def get_embedding(
             raise HTTPException(status_code=404, detail=f"No embedding for key '{key}'")
         grp = f[key]
         m = f['_meta']
+        # Use Procrustes-aligned coordinates when available (--action align),
+        # falling back to originals so the app works before alignment is run.
+        x_key = 'x_aligned' if 'x_aligned' in grp else 'x'
+        y_key = 'y_aligned' if 'y_aligned' in grp else 'y'
         return {
-            'x': grp['x'][()].tolist(),
-            'y': grp['y'][()].tolist(),
+            'x': grp[x_key][()].tolist(),
+            'y': grp[y_key][()].tolist(),
             'z': grp['z'][()].tolist() if 'z' in grp else None,
             'labels': m['labels'][()].tolist(),
             'label_names': _decode(m['label_names'][()]) if 'label_names' in m else None,
             'explained_variance_ratio': grp['explained_variance_ratio'][()].tolist()
                                         if 'explained_variance_ratio' in grp else None,
+            'aligned': x_key == 'x_aligned',
         }
