@@ -71,6 +71,7 @@ export function initCodeModal() {
 
   els.showCodeBtn.addEventListener('click', () => {
     codeBlock.textContent = generateCode();
+    if (window.Prism) Prism.highlightElement(codeBlock);
     modal.hidden = false;
   });
 

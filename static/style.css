@@ -662,43 +662,51 @@ input[type="range"]::-moz-range-thumb {
 .code-modal[hidden] { display: none; }
 
 .code-modal-box {
-  background: var(--header);
+  background: #1e2235;
   border-radius: var(--radius-lg);
-  width: min(640px, 92vw);
+  width: min(680px, 94vw);
   overflow: hidden;
-  box-shadow: 0 24px 60px rgba(0,0,0,0.4);
+  box-shadow: 0 32px 80px rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.06);
 }
 
 .code-modal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.625rem 1rem;
-  border-bottom: var(--dark-border);
+  padding: 0.75rem 1.25rem;
+  background: rgba(0,0,0,0.2);
+  border-bottom: 1px solid rgba(255,255,255,0.07);
 }
 
 .code-modal-title {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: var(--font-footnote);
-  color: rgba(255,255,255,0.35);
-  letter-spacing: 0.04em;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: var(--font-body);
+  font-weight: 600;
+  color: rgba(255,255,255,0.5);
+  letter-spacing: 0;
 }
 
-.code-modal-actions { display: flex; gap: 0.5rem; }
+.code-modal-actions { display: flex; gap: 0.5rem; align-items: center; }
 
 .code-action-btn {
-  background: rgba(255,255,255,0.07);
-  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
   border-radius: var(--radius-sm);
-  color: rgba(255,255,255,0.55);
-  font-family: 'JetBrains Mono', monospace;
-  font-size: var(--font-footnote);
-  padding: 0.2rem 0.6rem;
+  color: rgba(255,255,255,0.5);
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: var(--font-body);
+  font-weight: 500;
+  padding: 0.25rem 0.75rem;
   cursor: pointer;
-  transition: background 0.12s, color 0.12s;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
 }
 
-.code-action-btn:hover { background: rgba(255,255,255,0.14); color: #fff; }
+.code-action-btn:hover {
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  border-color: rgba(255,255,255,0.2);
+}
 
 .code-action-btn.active {
   background: var(--accent);
@@ -706,17 +714,29 @@ input[type="range"]::-moz-range-thumb {
   color: #fff;
 }
 
+/* Prism overrides — keep background from .code-block, match app typography */
 .code-block {
   font-family: 'JetBrains Mono', monospace;
   font-size: var(--font-ui);
-  line-height: 1.7;
-  color: var(--dark-text);
-  padding: 1.25rem 1.25rem 1.5rem;
+  line-height: 1.75;
+  padding: 1.5rem 1.25rem;
   margin: 0;
   overflow-x: auto;
-  white-space: pre;
+  background: transparent !important;
   tab-size: 4;
 }
+
+/* Prism token colours tuned to our palette */
+.token.keyword    { color: #7eb3fb; }              /* soft blue  */
+.token.builtin    { color: #7eb3fb; }
+.token.function   { color: #c3a6ff; }              /* soft violet */
+.token.class-name { color: #c3a6ff; }
+.token.string     { color: #7bd49c; }              /* soft green  */
+.token.number     { color: #f7c06a; }              /* amber       */
+.token.operator   { color: #89c4e1; }              /* sky         */
+.token.punctuation{ color: rgba(210,220,240,0.5); }
+.token.comment    { color: var(--text-3); font-style: italic; }
+.token.decorator  { color: #f7c06a; }
 
 /* ── Plot area ───────────────────────────── */
 #plot-container {
