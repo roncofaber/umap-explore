@@ -195,11 +195,11 @@ export function switchTab(tab) {
   els.contentHdbscan.hidden = tab !== 'hdbscan';
 
   if (tab === 'hdbscan') {
-    els.viewToggle.hidden = false;
+    els.viewToggle.classList.add('visible');
     requestAnimationFrame(positionAllTicks);
     fetchAndCluster();
   } else {
-    els.viewToggle.hidden = true;
+    els.viewToggle.classList.remove('visible');
     state.clusterView = 'scatter';
     state.clusterResult = null;
     els.clusterStat.hidden = true;

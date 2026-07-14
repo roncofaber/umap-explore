@@ -741,7 +741,7 @@ input[type="range"]::-moz-range-thumb {
 
 /* ── Scatter / tree view toggle ─────────── */
 .view-toggle {
-  display: flex;
+  display: none;   /* hidden by default; shown only in HDBSCAN tab via .visible class */
   gap: 0;
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -761,6 +761,7 @@ input[type="range"]::-moz-range-thumb {
   transition: background 0.12s, color 0.12s;
 }
 
+.view-toggle.visible { display: flex; }
 .view-toggle .toggle:not(:last-child) { border-right: 1px solid var(--border); }
 .view-toggle .toggle.active { background: var(--accent); color: #fff; }
 .view-toggle .toggle:not(.active):hover { background: var(--accent-dim); color: var(--accent); }

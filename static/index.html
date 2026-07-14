@@ -147,7 +147,7 @@
 
         <details class="section-explainer">
           <summary>How to read the tree</summary>
-          <p>The x-axis is λ = 1/distance (higher = denser). Moving right means requiring points to be closer together. Each rectangle is a cluster: its <strong>width</strong> is how long it survives (stability), its <strong>height</strong> is how many points it contains. <strong>Coloured filled</strong> rectangles are the clusters HDBSCAN selected — the ones that persist over the widest λ range. Rectangles split at vertical connectors when a cluster divides into sub-clusters.</p>
+          <p>The <strong>y-axis is λ</strong> (1/distance) — higher means denser. Each vertical bar is a cluster: its <strong>height</strong> spans the λ range it survives (taller = more stable), and its <strong>width</strong> is the number of points. Bars <em>narrow</em> as points fall off. <strong>Coloured outlines</strong> mark the clusters HDBSCAN selected. Horizontal black lines connect a parent cluster to its children at the split λ.</p>
         </details>
 
         <div class="params-divider">Parameters</div>
