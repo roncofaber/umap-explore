@@ -284,10 +284,6 @@ def _align_dataset(dataset_name, output_dir: Path,
                 nb_raw = np.column_stack([f[nb_key]['x'][()], f[nb_key]['y'][()]])
                 nb_c   = nb_raw - nb_raw.mean(axis=0)
                 Q, _   = orthogonal_procrustes(nb_c, cur_c)
-                # Force proper rotation (det = +1) — reflections cause jarring flips.
-                # In 2-D, negating the last column is the exact optimal fix.
-                if np.linalg.det(Q) < 0:
-                    Q[:, -1] *= -1
                 aligned = nb_c @ Q + cur_mu
 
                 aligned_coords[nb_key] = aligned
