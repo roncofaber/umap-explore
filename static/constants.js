@@ -10,6 +10,10 @@ export const PERPLEXITY_STEPS  = [5, 15, 30, 50, 100];                  // t-SNE
 // l+r = t+b = 120 → equal margins keep the axes box square
 export const MARGIN = { t: 30, r: 70, b: 110, l: 70 }; // l+r = t+b = 140 → square axes box
 
+const LEGEND_FONT_SIZE  = 12;   // matches legend.font.size below
+const LEGEND_MAX_ROWS   = 4;
+export const LEGEND_MAX_HEIGHT = LEGEND_MAX_ROWS * (LEGEND_FONT_SIZE + 10); // ~88px
+
 export const AXIS_LABEL_FONT = {
   family: "'JetBrains Mono', monospace",
   size: 14,

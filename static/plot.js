@@ -1,6 +1,6 @@
 import { state, datasetInfo, cachedData } from './state.js';
 import { els } from './elements.js';
-import { MARGIN, AXIS_LABEL_FONT, TICK_FONT, AXIS_BOX } from './constants.js';
+import { MARGIN, AXIS_LABEL_FONT, TICK_FONT, AXIS_BOX, LEGEND_MAX_HEIGHT } from './constants.js';
 
 // ── Module-level state ────────────────────────────────────────────────────────
 let currentEmb = null;
@@ -164,6 +164,7 @@ export function makeLayout(emb) {
       font: { family: "'Plus Jakarta Sans', sans-serif", size: 12, color: '#515978' },
       itemsizing: 'constant',
       tracegroupgap: 0,
+      maxheight: LEGEND_MAX_HEIGHT,
     },
     xaxis: {
       ...AXIS_BOX,
