@@ -432,7 +432,7 @@ select:focus, select:hover { border-color: var(--accent); }
   border: 1.5px solid var(--border);
   border-radius: 5px;
   padding: 0.1rem 0.5rem;
-  width: 5.5ch;
+  width: 6.5ch;
   outline: none;
   cursor: text;
   transition: border-color 0.15s, background 0.15s;
