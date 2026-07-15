@@ -19,6 +19,7 @@ export const state = {
   allowSingleCluster:       false,
   clusterOn:                'projection', // 'projection' | 'data'
   clusterView:              'scatter',    // 'scatter' | 'tree'
+  hdbscanColor:             'cluster',   // 'cluster' | 'probability'
   clusterResult:            null,
   explainedVarianceRatio:   null,    // [pc1, pc2, pc3] from PCA, null otherwise
   perplexity:               30,      // t-SNE perplexity

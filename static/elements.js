@@ -53,6 +53,9 @@ export const els = {
   viewScatter:      q('view-scatter'),
   viewTree:         q('view-tree'),
   treeWrapper:      q('tree-wrapper'),
+  hcSection:        q('hdbscan-color-section'),
+  hcCluster:        q('hc-cluster'),
+  hcProbability:    q('hc-probability'),
   // Plot
   plot:             q('plot'),
   loading:          q('loading'),

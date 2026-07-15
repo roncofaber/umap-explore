@@ -62,25 +62,39 @@ export function makeTrace(emb) {
   const H = els.plot.offsetHeight || 700;
 
   if (state.tab === 'hdbscan' && state.clusterResult) {
-    // ── HDBSCAN scatter: color by cluster ──────────────────────────────────
     const NOISE_COLOR = '#1c2033';
-    const { colors, labels, cluster_colors } = state.clusterResult;
-    const pointColors = labels.map((l, i) => l >= 0 ? colors[i] : NOISE_COLOR);
-    const hl = state.highlightedCluster;
-    marker.color = hl !== null
-      ? labels.map((l, i) => l === hl ? pointColors[i] : '#d0d5e8')
-      : pointColors;
-    hoverText.splice(0, hoverText.length,
-      ...labels.map(l => l >= 0 ? `cluster ${l}` : 'noise'));
+    const { colors, labels, cluster_colors, probabilities } = state.clusterResult;
 
-    const uniqueClusters = [...new Set(labels.filter(l => l >= 0))].sort((a, b) => a - b);
-    const visibleClusters = uniqueClusters.slice(0, LEGEND_MAX_ENTRIES);
-    visibleClusters.forEach((cl, i) =>
-      dummies.push(legendEntry(`cluster ${cl}`, cluster_colors[i])));
-    if (uniqueClusters.length > LEGEND_MAX_ENTRIES)
-      dummies.push(legendEntry(`+${uniqueClusters.length - LEGEND_MAX_ENTRIES} more`, '#a0aabf'));
-    if (state.clusterResult.n_noise > 0)
-      dummies.push(legendEntry('noise', NOISE_COLOR));
+    if (state.hdbscanColor === 'probability' && probabilities) {
+      // ── Color by membership strength ───────────────────────────────────
+      marker.color      = probabilities;
+      marker.colorscale = [[0, NOISE_COLOR], [1, '#5469d4']];
+      marker.showscale  = true;
+      marker.cmin = 0; marker.cmax = 1;
+      marker.colorbar   = hColorbar(H, 'membership strength');
+      hoverText.splice(0, hoverText.length,
+        ...labels.map((l, i) =>
+          l >= 0 ? `cluster ${l}  (p=${probabilities[i].toFixed(2)})` : 'noise'));
+
+    } else {
+      // ── Color by cluster ────────────────────────────────────────────────
+      const pointColors = labels.map((l, i) => l >= 0 ? colors[i] : NOISE_COLOR);
+      const hl = state.highlightedCluster;
+      marker.color = hl !== null
+        ? labels.map((l, i) => l === hl ? pointColors[i] : '#d0d5e8')
+        : pointColors;
+      hoverText.splice(0, hoverText.length,
+        ...labels.map(l => l >= 0 ? `cluster ${l}` : 'noise'));
+
+      const uniqueClusters = [...new Set(labels.filter(l => l >= 0))].sort((a, b) => a - b);
+      const visibleClusters = uniqueClusters.slice(0, LEGEND_MAX_ENTRIES);
+      visibleClusters.forEach((cl, i) =>
+        dummies.push(legendEntry(`cluster ${cl}`, cluster_colors[i])));
+      if (uniqueClusters.length > LEGEND_MAX_ENTRIES)
+        dummies.push(legendEntry(`+${uniqueClusters.length - LEGEND_MAX_ENTRIES} more`, '#a0aabf'));
+      if (state.clusterResult.n_noise > 0)
+        dummies.push(legendEntry('noise', NOISE_COLOR));
+    }
 
   } else if (state.colorBy !== 'class') {
     // ── Color by feature: horizontal Viridis colorbar below ───────────────

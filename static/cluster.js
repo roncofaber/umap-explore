@@ -172,7 +172,7 @@ export function setClusterView(view) {
   els.viewTree.classList.toggle('active', isTree);
   els.plot.closest('#plot-wrapper').hidden = isTree;
   els.treeWrapper.hidden = !isTree;
-  // scatter legend is now inside Plotly — nothing to hide/show
+  els.hcSection.hidden = isTree;
   if (isTree) fetchTree();
 }
 
@@ -215,8 +215,12 @@ export function switchTab(tab) {
   } else {
     state.clusterView = 'scatter';
     state.clusterResult = null;
+    state.hdbscanColor = 'cluster';
     els.viewScatter.classList.add('active');
     els.viewTree.classList.remove('active');
+    els.hcCluster.classList.add('active');
+    els.hcProbability.classList.remove('active');
+    els.hcSection.hidden = false;
     els.plot.closest('#plot-wrapper').hidden = false;
     els.treeWrapper.hidden = true;
     rerenderColors();
@@ -309,6 +313,22 @@ export function initClusterControls() {
   els.viewTree.addEventListener('click', () => {
     if (state.clusterView === 'tree') return;
     setClusterView('tree');
+  });
+
+  els.hcCluster.addEventListener('click', () => {
+    if (state.hdbscanColor === 'cluster') return;
+    state.hdbscanColor = 'cluster';
+    els.hcCluster.classList.add('active');
+    els.hcProbability.classList.remove('active');
+    rerenderColors();
+  });
+
+  els.hcProbability.addEventListener('click', () => {
+    if (state.hdbscanColor === 'probability') return;
+    state.hdbscanColor = 'probability';
+    els.hcProbability.classList.add('active');
+    els.hcCluster.classList.remove('active');
+    rerenderColors();
   });
 
   els.coProjection.addEventListener('click', () => {

@@ -193,11 +193,12 @@ def get_cluster(
     n_noise = labels.count(-1)
 
     return {
-        'labels': labels,
-        'colors': colors,
-        'n_clusters': n_clusters,
-        'n_noise': n_noise,
-        'cluster_names': [f'cluster {i}' for i in unique],
+        'labels':        labels,
+        'colors':        colors,
+        'probabilities': clusterer.probabilities_.tolist(),
+        'n_clusters':    n_clusters,
+        'n_noise':       n_noise,
+        'cluster_names':  [f'cluster {i}' for i in unique],
         'cluster_colors': [palette[i % len(palette)] for i in unique],
     }
 
@@ -284,12 +285,13 @@ def get_cluster_tree(
 
     data = _condensed_tree_plot_data(clusterer, palette)
     data.update({
-        'epsilon': cluster_selection_epsilon,
-        'labels': labels,
-        'colors': colors,
-        'n_clusters': len(unique),
-        'n_noise': labels.count(-1),
-        'cluster_names': [f'cluster {i}' for i in unique],
+        'epsilon':       cluster_selection_epsilon,
+        'labels':        labels,
+        'colors':        colors,
+        'probabilities': clusterer.probabilities_.tolist(),
+        'n_clusters':    len(unique),
+        'n_noise':       labels.count(-1),
+        'cluster_names':  [f'cluster {i}' for i in unique],
         'cluster_colors': [palette[i % len(palette)] for i in unique],
     })
     return data
