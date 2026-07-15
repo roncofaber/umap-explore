@@ -1,6 +1,6 @@
 import { state, datasetInfo, cachedData } from './state.js';
 import { els } from './elements.js';
-import { MARGIN, AXIS_LABEL_FONT, TICK_FONT, AXIS_BOX, LEGEND_MAX_ENTRIES } from './constants.js';
+import { MARGIN, AXIS_LABEL_FONT, TICK_FONT, AXIS_BOX, LEGEND_MAX_ENTRIES, ANIM_DURATION } from './constants.js';
 
 // ── Module-level state ────────────────────────────────────────────────────────
 let currentEmb = null;
@@ -184,8 +184,9 @@ export function makeLayout(emb) {
 }
 
 // ── Animation ─────────────────────────────────────────────────────────────────
-function cubicInOut(t) {
-  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+// Sinusoidal ease-in-out: same S-curve as cubic but much gentler acceleration.
+function easeInOutSine(t) {
+  return -(Math.cos(Math.PI * t) - 1) / 2;
 }
 
 function interpolateEmb(from, to, e) {
@@ -218,13 +219,12 @@ export function renderPlot(emb) {
 
   const from  = currentEmb;
   const start = performance.now();
-  const DURATION = 600;
 
   if (animFrame) cancelAnimationFrame(animFrame);
 
   (function tick() {
-    const t      = Math.min((performance.now() - start) / DURATION, 1);
-    const interp = interpolateEmb(from, emb, cubicInOut(t));
+    const t      = Math.min((performance.now() - start) / ANIM_DURATION, 1);
+    const interp = interpolateEmb(from, emb, easeInOutSine(t));
     currentEmb   = interp;
     Plotly.react(els.plot, makeTrace(interp), makeLayout(interp));
     animFrame = t < 1 ? requestAnimationFrame(tick) : null;
