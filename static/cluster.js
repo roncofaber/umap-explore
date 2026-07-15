@@ -84,7 +84,7 @@ function renderTreePlot(data) {
   const xPad = (xMax - xMin) * 0.01;
 
   Plotly.react(els.treeWrapper, traces, {
-    margin: { t: 20, r: 20, b: 70, l: 70 },
+    margin: { t: 20, r: 20, b: 70, l: 62 },
     paper_bgcolor: '#eef0f5', plot_bgcolor: '#eef0f5',
     bargap: 0,
     showlegend: selected_clusters.length > 0,
