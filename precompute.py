@@ -228,17 +228,20 @@ def _align_dataset(dataset_name, output_dir: Path,
                    n_neighbors_list, min_dist_list, n_components_list,
                    metrics_list, scales_list):
     """
-    BFS-chained Procrustes alignment across the full embedding space.
+    MST-Procrustes alignment across the full embedding space.
 
-    Instead of aligning every embedding directly to a global reference, we do a
-    breadth-first traversal of the parameter graph and align each embedding to
-    its nearest already-aligned neighbour. Adjacent embeddings differ by exactly
-    one step in one parameter. Cross-method bridges connect at default values
-    (UMAP 15/0.1, t-SNE perplexity=30) for matching (metric, scale) pairs.
+    Build a graph where adjacent embeddings (one parameter step apart) are
+    connected by edges weighted by their Procrustes residual. Find the minimum
+    spanning tree (MST) of this graph, root it at the reference embedding, then
+    align each node to its MST parent.
 
-    Result: transitions between adjacent parameter values are maximally smooth;
-    the orientation stays consistent across the full dataset.
+    This guarantees that tightly-related embeddings (e.g. min_dist 0.05 vs 0.1)
+    are aligned directly to each other rather than through unrelated paths, which
+    BFS cannot ensure when both nodes are equidistant from the reference.
     """
+    from scipy.sparse import csr_matrix
+    from scipy.sparse.csgraph import minimum_spanning_tree as mst_fn
+
     path = output_dir / f'{dataset_name}.h5'
     if not path.exists():
         print(f'{dataset_name}: no HDF5 file, skipping')
@@ -256,50 +259,67 @@ def _align_dataset(dataset_name, output_dir: Path,
             ref_key = present[0]
             print(f'{dataset_name}: default reference missing, falling back to {ref_key!r}')
 
-        # BFS: aligned_coords maps key → already-aligned np.ndarray
+        n   = len(present)
+        idx = {k: i for i, k in enumerate(present)}
+
+        # Load all raw embeddings once
+        raws = {k: np.column_stack([f[k]['x'][()], f[k]['y'][()]]) for k in present}
+
+        # Build weighted adjacency matrix (Procrustes residual per adjacent pair)
+        rows, cols, weights = [], [], []
+        for i, k1 in enumerate(present):
+            c1 = raws[k1] - raws[k1].mean(0)
+            for j in range(i + 1, n):
+                k2 = present[j]
+                if not _are_adjacent(k1, k2, n_neighbors_list, min_dist_list,
+                                     PERPLEXITY_STEPS):
+                    continue
+                c2  = raws[k2] - raws[k2].mean(0)
+                Q, _ = orthogonal_procrustes(c2, c1)
+                res  = float(np.sqrt(np.mean(np.sum((c2 @ Q - c1) ** 2, axis=1))))
+                rows += [i, j];  cols += [j, i];  weights += [res, res]
+
+        if not rows:
+            print(f'{dataset_name}: no adjacent pairs found, skipping')
+            return
+
+        graph = csr_matrix((weights, (rows, cols)), shape=(n, n))
+        mst   = mst_fn(graph)          # lower-triangular directed MST
+        mst   = (mst + mst.T).tocsr()  # make undirected for traversal
+
+        # Iterative DFS from reference along MST
         aligned_coords = {}
-        ref_emb = np.column_stack([f[ref_key]['x'][()], f[ref_key]['y'][()]])
-        aligned_coords[ref_key] = ref_emb
+        stack = deque([(idx[ref_key], raws[ref_key])])  # (node_idx, parent_aligned_emb)
+        while stack:
+            ki, parent_emb = stack.pop()
+            k = present[ki]
 
-        grp = f[ref_key]
-        for ax in ('x_aligned', 'y_aligned'):
-            if ax in grp: del grp[ax]
-        grp.create_dataset('x_aligned', data=ref_emb[:, 0])
-        grp.create_dataset('y_aligned', data=ref_emb[:, 1])
+            if ki == idx[ref_key]:
+                aligned_coords[k] = raws[k]      # reference is already the anchor
+            else:
+                c_k  = raws[k] - raws[k].mean(0)
+                c_p  = parent_emb - parent_emb.mean(0)
+                Q, _ = orthogonal_procrustes(c_k, c_p)
+                aligned_coords[k] = c_k @ Q + parent_emb.mean(0)
 
-        queue = deque([ref_key])
-        while queue:
-            cur_key = queue.popleft()
-            cur_emb = aligned_coords[cur_key]
-            cur_mu  = cur_emb.mean(axis=0)
-            cur_c   = cur_emb - cur_mu
+            for j in mst[ki].indices:
+                if present[j] not in aligned_coords:
+                    stack.append((j, aligned_coords[k]))
 
-            for nb_key in present:
-                if nb_key in aligned_coords:
-                    continue
-                if not _are_adjacent(cur_key, nb_key,
-                                     n_neighbors_list, min_dist_list, PERPLEXITY_STEPS):
-                    continue
-
-                nb_raw = np.column_stack([f[nb_key]['x'][()], f[nb_key]['y'][()]])
-                nb_c   = nb_raw - nb_raw.mean(axis=0)
-                Q, _   = orthogonal_procrustes(nb_c, cur_c)
-                aligned = nb_c @ Q + cur_mu
-
-                aligned_coords[nb_key] = aligned
-                queue.append(nb_key)
-
-                grp = f[nb_key]
-                for ax in ('x_aligned', 'y_aligned'):
-                    if ax in grp: del grp[ax]
-                grp.create_dataset('x_aligned', data=aligned[:, 0])
-                grp.create_dataset('y_aligned', data=aligned[:, 1])
+        # Write aligned coordinates
+        for k, aln in aligned_coords.items():
+            grp = f[k]
+            for ax in ('x_aligned', 'y_aligned'):
+                if ax in grp: del grp[ax]
+            grp.create_dataset('x_aligned', data=aln[:, 0])
+            grp.create_dataset('y_aligned', data=aln[:, 1])
 
         reached = len(aligned_coords)
-        print(f'{dataset_name}: BFS-chained alignment — {reached}/{len(present)} embeddings reached')
-        if reached < len(present):
+        print(f'{dataset_name}: MST-Procrustes alignment — {reached}/{n} embeddings reached')
+        if reached < n:
             missed = sorted(set(present) - set(aligned_coords))
-            print(f'  Unreachable (no path from reference): {missed[:5]}{"..." if len(missed) > 5 else ""}')
+            print(f'  Disconnected (no path to reference): '
+                  f'{missed[:5]}{"..." if len(missed) > 5 else ""}')
 
 
 # ── JSON → HDF5 migration ──────────────────────────────────────────────────────
