@@ -84,7 +84,7 @@ function renderTreePlot(data) {
   const xPad = (xMax - xMin) * 0.01;
 
   Plotly.react(els.treeWrapper, traces, {
-    margin: { t: 20, r: 20, b: 70, l: 55 },
+    margin: { t: 20, r: 20, b: 70, l: 70 },
     paper_bgcolor: '#eef0f5', plot_bgcolor: '#eef0f5',
     bargap: 0,
     showlegend: selected_clusters.length > 0,
@@ -94,7 +94,7 @@ function renderTreePlot(data) {
     xaxis: { visible: false, showgrid: false, zeroline: false,
              range: [xMin - xPad, xMax + xPad] },
     yaxis: {
-      title: { text: 'λ  (1 / distance)', font: AXIS_LABEL_FONT, standoff: 6 },
+      title: { text: 'λ  (1 / distance)', font: AXIS_LABEL_FONT, standoff: 10 },
       autorange: 'reversed',
       showgrid: false, zeroline: false,
       showline: true, linecolor: '#000', linewidth: 1.5,
