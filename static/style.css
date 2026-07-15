@@ -7,12 +7,14 @@
   --text-1:     #1c2033;
   --text-2:     #515978;
   --text-3:     #8a94b2;
-  --accent:     #5469d4;
-  --accent-dim: #eef1fb;
+  --accent:      #5469d4;
+  --accent-dim:  #eef1fb;
+  --accent-warm: #7c5cbf;            /* t-SNE: warm violet */
+  --accent-warm-dim: #f0ebfa;
   --code-bg:    #f0f2f8;
-  --green:      #1d7f45;
   --header:     #1c2033;
   --track:      #d4d9ec;
+  --shadow-card: 0 2px 20px color-mix(in srgb, var(--text-1) 10%, transparent);
 
   /* Dark-surface tokens (modals, data table) */
   --dark-surface: #252a40;
@@ -62,6 +64,7 @@ header {
   gap: var(--gap-section);
   flex-shrink: 0;
   position: relative;
+  border-bottom: 2px solid var(--accent);
 }
 
 .header-home {
@@ -454,9 +457,22 @@ select:focus, select:hover { border-color: var(--accent); }
   cursor: default;
 }
 
-.pname { color: var(--accent); font-weight: 500; }
-.peq   { color: var(--text-3); padding: 0 0.18em; flex-shrink: 0; }
-.pval  { color: var(--green);  font-weight: 600; }
+/* ── t-SNE warm accent (violet) ──────────── */
+#method-tsne.active { background: var(--accent-warm); }
+
+#perp-slider::-webkit-slider-thumb {
+  background: var(--accent-warm);
+  box-shadow: 0 0 0 1.5px var(--accent-warm);
+}
+#perp-slider::-moz-range-thumb {
+  background: var(--accent-warm);
+  box-shadow: 0 0 0 1.5px var(--accent-warm);
+}
+
+#perp-value {
+  color: var(--accent-warm);
+  background: var(--accent-warm-dim);
+}
 
 /* Full-width param select (metric, color_by) */
 .param-select {
@@ -846,6 +862,7 @@ input[type="range"]::-moz-range-thumb {
   aspect-ratio: 1;
   width: min(100%, calc(100svh - 48px - 3rem));
   max-width: 900px;
+  box-shadow: var(--shadow-card);
 }
 
 #plot { width: 100%; height: 100%; cursor: crosshair; }
