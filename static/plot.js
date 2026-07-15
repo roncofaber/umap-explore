@@ -178,7 +178,7 @@ export function makeLayout(emb) {
       orientation: 'h',
       x: 0.5, xanchor: 'center',
       y: belowAxisY(H), yanchor: 'top',
-      font: { family: "'Plus Jakarta Sans', sans-serif", size: 12, color: '#515978' },
+      font: { family: "'Plus Jakarta Sans', sans-serif", size: 13, color: '#515978' },
       itemsizing: 'constant',
       tracegroupgap: 0,
     },

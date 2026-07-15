@@ -24,10 +24,10 @@
   --modal-overlay: rgba(28, 32, 51, 0.55);
 
   /* ── Type scale (4 categories) ──────── */
-  --font-footnote: 0.7rem;
-  --font-body:     0.8rem;
-  --font-ui:       0.85rem;
-  --font-title:    1rem;
+  --font-footnote: 0.75rem;   /* 11.25px */
+  --font-body:     0.867rem;  /* 13px    */
+  --font-ui:       0.933rem;  /* 14px    */
+  --font-title:    1.067rem;  /* 16px    */
 
   /* ── Spacing ─────────────────────────── */
   --gap-section: 0.875rem;   /* sidebar section gap */
@@ -51,7 +51,7 @@ body {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.5;
 }
 

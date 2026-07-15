@@ -242,13 +242,13 @@ export const LEGEND_MAX_ENTRIES = LEGEND_MAX_ROWS * LEGEND_ENTRIES_PER_ROW; // 2
 
 export const AXIS_LABEL_FONT = {
   family: "'JetBrains Mono', monospace",
-  size: 14,
+  size: 15,
   color: '#515978',
 };
 
 export const TICK_FONT = {
   family: "'JetBrains Mono', monospace",
-  size: 13,
+  size: 14,
   color: '#8a94b2',
 };
 

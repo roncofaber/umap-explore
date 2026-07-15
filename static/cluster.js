@@ -54,7 +54,7 @@ function renderTreePlot(data) {
       x: (x_left + x_right) / 2, y: y_bottom,
       text: `cluster ${c.label}`,
       showarrow: false, yanchor: 'bottom',
-      font: { color: c.color, size: 11, family: SANS },
+      font: { color: c.color, size: 12, family: SANS },
     });
     traces.push({
       type: 'scatter', x: [null], y: [null], mode: 'markers',
@@ -74,7 +74,7 @@ function renderTreePlot(data) {
     annotations.push({
       x: 1, xref: 'paper', y: ly, xanchor: 'right', yanchor: 'top',
       text: `ε = ${epsilon}`, showarrow: false,
-      font: { color: '#e05252', size: 11, family: "'JetBrains Mono', monospace" },
+      font: { color: '#e05252', size: 12, family: "'JetBrains Mono', monospace" },
     });
   }
 
@@ -89,7 +89,7 @@ function renderTreePlot(data) {
     bargap: 0,
     showlegend: selected_clusters.length > 0,
     legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.18,
-              font: { family: SANS, size: 12, color: '#515978' } },
+              font: { family: SANS, size: 13, color: '#515978' } },
     shapes, annotations,
     xaxis: { visible: false, showgrid: false, zeroline: false,
              range: [xMin - xPad, xMax + xPad] },
