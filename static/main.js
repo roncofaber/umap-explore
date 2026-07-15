@@ -1,6 +1,6 @@
 import { state, datasetInfo } from './state.js';
 import { els } from './elements.js';
-import { N_NEIGHBORS_STEPS, MIN_DIST_STEPS, PERPLEXITY_STEPS } from './constants.js';
+import { N_NEIGHBORS_STEPS, MIN_DIST_STEPS, PERPLEXITY_STEPS, LEGEND_MAX_ENTRIES } from './constants.js';
 import { fetchEmbedding, ensureFeatureData } from './api.js';
 import { renderPlot, getCurrentEmb, setPlotCallbacks } from './plot.js';
 import { updateLegend, toggleHighlight, toggleClusterHighlight, rerenderColors } from './legend.js';
@@ -178,13 +178,20 @@ function wirePlotCallbacks() {
     // Dummy traces start at curveNumber=1; curveNumber-1 = class/cluster index.
     (data) => {
       const dummyIdx = data.curveNumber - 1;
-      if (dummyIdx < 0) return; // main trace, no legend entry
+      if (dummyIdx < 0) return; // main trace
       if (state.tab === 'hdbscan' && state.clusterResult) {
         const uniqueClusters = [...new Set(
           state.clusterResult.labels.filter(l => l >= 0)
         )].sort((a, b) => a - b);
-        const label = dummyIdx < uniqueClusters.length ? uniqueClusters[dummyIdx] : -1;
-        toggleClusterHighlight(label);
+        const capped = uniqueClusters.length > LEGEND_MAX_ENTRIES;
+        // Layout: [0..min(N,MAX)-1 clusters] [optional "+N more"] [optional noise]
+        if (dummyIdx < Math.min(uniqueClusters.length, LEGEND_MAX_ENTRIES)) {
+          toggleClusterHighlight(uniqueClusters[dummyIdx]);
+        } else if (capped && dummyIdx === LEGEND_MAX_ENTRIES) {
+          // overflow entry — no action
+        } else {
+          toggleClusterHighlight(-1); // noise
+        }
       } else if (state.colorBy === 'class') {
         toggleHighlight(dummyIdx);
       }

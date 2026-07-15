@@ -1,6 +1,6 @@
 import { state, datasetInfo, cachedData } from './state.js';
 import { els } from './elements.js';
-import { MARGIN, AXIS_LABEL_FONT, TICK_FONT, AXIS_BOX, LEGEND_MAX_HEIGHT } from './constants.js';
+import { MARGIN, AXIS_LABEL_FONT, TICK_FONT, AXIS_BOX, LEGEND_MAX_ENTRIES } from './constants.js';
 
 // ── Module-level state ────────────────────────────────────────────────────────
 let currentEmb = null;
@@ -74,8 +74,11 @@ export function makeTrace(emb) {
       ...labels.map(l => l >= 0 ? `cluster ${l}` : 'noise'));
 
     const uniqueClusters = [...new Set(labels.filter(l => l >= 0))].sort((a, b) => a - b);
-    uniqueClusters.forEach((cl, i) =>
+    const visibleClusters = uniqueClusters.slice(0, LEGEND_MAX_ENTRIES);
+    visibleClusters.forEach((cl, i) =>
       dummies.push(legendEntry(`cluster ${cl}`, cluster_colors[i])));
+    if (uniqueClusters.length > LEGEND_MAX_ENTRIES)
+      dummies.push(legendEntry(`+${uniqueClusters.length - LEGEND_MAX_ENTRIES} more`, '#a0aabf'));
     if (state.clusterResult.n_noise > 0)
       dummies.push(legendEntry('noise', NOISE_COLOR));
 
@@ -158,13 +161,12 @@ export function makeLayout(emb) {
     plot_bgcolor:  '#eef0f5',
     showlegend: true,
     legend: {
-      orientation: 'v',
+      orientation: 'h',
       x: 0.5, xanchor: 'center',
       y: belowAxisY(H), yanchor: 'top',
       font: { family: "'Plus Jakarta Sans', sans-serif", size: 12, color: '#515978' },
       itemsizing: 'constant',
       tracegroupgap: 0,
-      maxheight: LEGEND_MAX_HEIGHT,
     },
     xaxis: {
       ...AXIS_BOX,
