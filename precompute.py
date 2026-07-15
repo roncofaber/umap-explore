@@ -143,7 +143,7 @@ def precompute_tsne(dataset_name, output_dir, perplexity_list, metrics_list, sca
             init = 'pca' if metric == 'euclidean' else 'random'
             embedding = TSNE(
                 n_components=2, perplexity=perp, metric=metric,
-                init=init, learning_rate='auto', n_iter=500, random_state=42,
+                init=init, learning_rate='auto', max_iter=500, random_state=42,
             ).fit_transform(X_by_scale[scale])
             grp = f.create_group(key)
             grp.create_dataset('x', data=embedding[:, 0], compression='gzip')
