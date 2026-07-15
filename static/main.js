@@ -92,6 +92,7 @@ function wireUmapControls() {
     if (m === 'tsne') els.tsneMetricSelect.value = state.metric;
     if (m === 'umap') els.metricSelect.value = state.metric;
     showMethodParams(m);
+    requestAnimationFrame(positionAllTicks);
     fetchAndRender();
   }
   els.methodUmap.addEventListener('click', () => setMethod('umap'));
