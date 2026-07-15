@@ -42,6 +42,7 @@ export const els = {
   mcsValue:         q('mcs-value'),
   msSlider:         q('ms-slider'),
   msValue:          q('ms-value'),
+  msAuto:           q('ms-auto'),
   csmEom:           q('csm-eom'),
   csmLeaf:          q('csm-leaf'),
   cseSlider:        q('cse-slider'),

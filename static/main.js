@@ -44,6 +44,9 @@ function resetParams() {
   state.method = 'umap'; state.highlightedLabel = null;
   state.highlightedCluster = null; state.colorBy = 'class';
   state.perplexity = 30; state.pcX = 0; state.pcY = 1;
+  state.minSamplesAuto = true;
+  els.msAuto.classList.add('active');
+  els.msSlider.disabled = true; els.msValue.disabled = true;
 
   els.nnSlider.value = N_NEIGHBORS_STEPS.indexOf(15); els.nnValue.textContent = 15;
   els.mdSlider.value = MIN_DIST_STEPS.indexOf(0.1);   els.mdValue.textContent = 0.1;

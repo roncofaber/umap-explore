@@ -139,11 +139,12 @@ def _get_cluster_coords(dataset_name, method, n_neighbors, min_dist,
             return np.column_stack([x, y])
 
 
-def _hdbscan_params(min_cluster_size, min_samples, cluster_selection_method,
-                    cluster_selection_epsilon, allow_single_cluster):
+def _hdbscan_params(min_cluster_size, min_samples, min_samples_auto,
+                    cluster_selection_method, cluster_selection_epsilon,
+                    allow_single_cluster):
     return dict(
         min_cluster_size=min_cluster_size,
-        min_samples=min_samples,
+        min_samples=None if min_samples_auto else min_samples,
         cluster_selection_method=cluster_selection_method,
         cluster_selection_epsilon=cluster_selection_epsilon,
         allow_single_cluster=allow_single_cluster,
@@ -164,6 +165,7 @@ def get_cluster(
     pc_y: int = Query(1, ge=0, le=2),
     min_cluster_size: int = Query(15, ge=2),
     min_samples: int = Query(5, ge=1),
+    min_samples_auto: bool = Query(True),
     cluster_selection_method: Literal['eom', 'leaf'] = Query('eom'),
     cluster_selection_epsilon: float = Query(0.0, ge=0.0),
     allow_single_cluster: bool = Query(False),
@@ -181,8 +183,9 @@ def get_cluster(
                                   n_components, metric, scale, cluster_on, path,
                                   perplexity=perplexity, pc_x=pc_x, pc_y=pc_y)
     clusterer = hdbscan_lib.HDBSCAN(
-        **_hdbscan_params(min_cluster_size, min_samples, cluster_selection_method,
-                          cluster_selection_epsilon, allow_single_cluster)
+        **_hdbscan_params(min_cluster_size, min_samples, min_samples_auto,
+                          cluster_selection_method, cluster_selection_epsilon,
+                          allow_single_cluster)
     ).fit(coords)
 
     labels = clusterer.labels_.tolist()
@@ -257,6 +260,7 @@ def get_cluster_tree(
     pc_y: int = Query(1, ge=0, le=2),
     min_cluster_size: int = Query(15, ge=2),
     min_samples: int = Query(5, ge=1),
+    min_samples_auto: bool = Query(True),
     cluster_selection_method: Literal['eom', 'leaf'] = Query('eom'),
     cluster_selection_epsilon: float = Query(0.0, ge=0.0),
     allow_single_cluster: bool = Query(False),
@@ -275,8 +279,9 @@ def get_cluster_tree(
                                   perplexity=perplexity, pc_x=pc_x, pc_y=pc_y)
     palette = cc.glasbey_dark
     clusterer = hdbscan_lib.HDBSCAN(
-        **_hdbscan_params(min_cluster_size, min_samples, cluster_selection_method,
-                          cluster_selection_epsilon, allow_single_cluster)
+        **_hdbscan_params(min_cluster_size, min_samples, min_samples_auto,
+                          cluster_selection_method, cluster_selection_epsilon,
+                          allow_single_cluster)
     ).fit(coords)
 
     labels = clusterer.labels_.tolist()

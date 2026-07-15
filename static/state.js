@@ -14,6 +14,7 @@ export const state = {
   tab:                      'umap',   // 'umap' | 'hdbscan'
   minClusterSize:           15,
   minSamples:               5,
+  minSamplesAuto:           true,   // when true, min_samples = None → HDBSCAN defaults to min_cluster_size
   clusterSelectionMethod:   'eom',
   clusterSelectionEpsilon:  0.0,
   allowSingleCluster:       false,

@@ -31,6 +31,7 @@ export async function fetchClusterResult() {
     pc_x:                       state.pcX,
     pc_y:                       state.pcY,
     min_cluster_size:           state.minClusterSize,
+    min_samples_auto:           state.minSamplesAuto,
     min_samples:                state.minSamples,
     cluster_selection_method:   state.clusterSelectionMethod,
     cluster_selection_epsilon:  state.clusterSelectionEpsilon,

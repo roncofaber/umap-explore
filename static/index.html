@@ -258,10 +258,11 @@
         <div class="control-group">
           <div class="param-header">
             <span>min_samples</span>
-            <input type="number" id="ms-value" class="param-input" value="5" min="1" max="200" step="1">
-            <span class="param-q" data-tip="The number of points in a neighbourhood used to compute core distances and mutual reachability distances. Larger values make clustering more conservative, requiring denser regions to form clusters and declaring more points as noise. Defaults to min_cluster_size.">?</span>
+            <button id="ms-auto" class="param-auto active" title="Use min_cluster_size as default">auto</button>
+            <input type="number" id="ms-value" class="param-input" value="15" min="1" max="200" step="1" disabled>
+            <span class="param-q" data-tip="Number of points in a neighbourhood used to compute core distances. Larger values = more conservative clustering, more noise. Toggle auto off to set independently; when auto is on it mirrors min_cluster_size.">?</span>
           </div>
-          <input type="range" id="ms-slider" min="0" max="5" step="1" value="2">
+          <input type="range" id="ms-slider" min="0" max="5" step="1" value="2" disabled>
           <div class="slider-ticks">
             <span>1</span><span>3</span><span>5</span><span>10</span><span>15</span><span>20</span>
           </div>

@@ -131,6 +131,7 @@ export async function fetchTree() {
       n_components: 2, metric: state.metric, scale: state.scale,
       perplexity: state.perplexity, pc_x: state.pcX, pc_y: state.pcY,
       min_cluster_size: state.minClusterSize, min_samples: state.minSamples,
+      min_samples_auto: state.minSamplesAuto,
       cluster_selection_method: state.clusterSelectionMethod,
       cluster_selection_epsilon: state.clusterSelectionEpsilon,
       allow_single_cluster: state.allowSingleCluster,
@@ -230,9 +231,14 @@ export function switchTab(tab) {
 
 // ── Slider wiring (called from main.js) ───────────────────────────────────────
 export function initClusterControls() {
+  function syncMsAutoDisplay() {
+    if (state.minSamplesAuto) els.msValue.value = state.minClusterSize;
+  }
+
   els.mcsSlider.addEventListener('input', () => {
     state.minClusterSize  = MCS_STEPS[parseInt(els.mcsSlider.value)];
     els.mcsValue.value    = state.minClusterSize;
+    syncMsAutoDisplay();
     scheduleCluster();
   });
 
@@ -243,6 +249,16 @@ export function initClusterControls() {
     const idx = MCS_STEPS.reduce((bi, s, i) =>
       Math.abs(s - v) < Math.abs(MCS_STEPS[bi] - v) ? i : bi, 0);
     els.mcsSlider.value = idx;
+    syncMsAutoDisplay();
+    scheduleCluster();
+  });
+
+  els.msAuto.addEventListener('click', () => {
+    state.minSamplesAuto = !state.minSamplesAuto;
+    els.msAuto.classList.toggle('active', state.minSamplesAuto);
+    els.msSlider.disabled = state.minSamplesAuto;
+    els.msValue.disabled  = state.minSamplesAuto;
+    syncMsAutoDisplay();
     scheduleCluster();
   });
 
