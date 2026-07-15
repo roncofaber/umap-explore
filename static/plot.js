@@ -158,7 +158,7 @@ export function makeLayout(emb) {
     plot_bgcolor:  '#eef0f5',
     showlegend: true,
     legend: {
-      orientation: 'h',
+      orientation: 'v',
       x: 0.5, xanchor: 'center',
       y: belowAxisY(H), yanchor: 'top',
       font: { family: "'Plus Jakarta Sans', sans-serif", size: 12, color: '#515978' },

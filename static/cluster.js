@@ -88,7 +88,7 @@ function renderTreePlot(data) {
     paper_bgcolor: '#eef0f5', plot_bgcolor: '#eef0f5',
     bargap: 0,
     showlegend: selected_clusters.length > 0,
-    legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.18,
+    legend: { orientation: 'v', x: 0.5, xanchor: 'center', y: -0.18,
               font: { family: SANS, size: 12, color: '#515978' },
               maxheight: LEGEND_MAX_HEIGHT },
     shapes, annotations,
