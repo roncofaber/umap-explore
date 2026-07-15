@@ -96,6 +96,12 @@ export function makeTrace(emb) {
     marker.color = emb.labels.map(l =>
       l === state.highlightedLabel ? (palette ? palette[l] : '#5469d4') : '#d0d5e8'
     );
+    // Keep legend entries — highlighted class uses its real colour, others dim.
+    if (emb.label_names)
+      emb.label_names.forEach((name, i) =>
+        dummies.push(legendEntry(name,
+          i === state.highlightedLabel ? (palette ? palette[i] : '#5469d4') : '#d0d5e8'
+        )));
 
   } else if (isContinuous) {
     // ── Continuous data (Swiss Roll): Viridis colorbar below ──────────────
