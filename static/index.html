@@ -212,12 +212,10 @@
           </div>
         </details>
 
-        <details class="section-explainer">
-          <summary>How to read the tree</summary>
-          <p>The <strong>y-axis is λ</strong> (1/distance), where higher means denser. Each bar represents a cluster: its <strong>height</strong> spans the λ range over which it persists (taller = longer-persisting), and its <strong>width</strong> at any level is the number of points it contains. Bars <em>narrow</em> as points fall out of the cluster. <strong>Coloured outlines</strong> mark the clusters selected for greatest stability. Horizontal lines connect a parent cluster to its children at the λ where it splits.</p>
-        </details>
-
-        <div class="params-divider">View</div>
+        <div class="params-divider">
+          View
+          <span class="param-q" data-tip="In tree view the y-axis is λ (1/distance). Bar height spans the λ range a cluster persists — taller means longer-persisting; width at any level is the point count. Bars narrow as points fall off. Coloured outlines mark selected clusters; horizontal lines show where a parent splits into children.">?</span>
+        </div>
 
         <div class="control-group">
           <div class="param-block">
@@ -229,7 +227,10 @@
         </div>
 
         <div id="hdbscan-color-section">
-          <div class="params-divider">Color</div>
+          <div class="params-divider">
+            Color
+            <span class="param-q" data-tip="cluster: points coloured by their assigned cluster label. probability: points coloured by membership strength — 0 is noise or a border point, 1 is a core cluster member.">?</span>
+          </div>
           <div class="control-group">
             <div class="param-block">
               <div class="toggle-group">
