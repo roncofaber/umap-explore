@@ -37,11 +37,12 @@ export async function fetchClusterResult() {
 }
 
 export async function ensureFeatureData() {
-  const key = `${state.dataset}_${state.scale}`;
+  // Always fetch raw values — scaled (z-score) values are uninterpretable as a colour axis.
+  const key = `${state.dataset}_raw`;
   if (cachedData[key]) return cachedData[key];
   setLoading('loading feature data…');
   try {
-    const resp = await fetch(`/api/data/${state.dataset}?scale=${state.scale}`);
+    const resp = await fetch(`/api/data/${state.dataset}?scale=raw`);
     if (!resp.ok) return null;
     cachedData[key] = await resp.json();
     return cachedData[key];

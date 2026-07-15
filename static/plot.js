@@ -81,7 +81,7 @@ export function makeTrace(emb) {
 
   } else if (state.colorBy !== 'class') {
     // ── Color by feature: horizontal Viridis colorbar below ───────────────
-    const fd    = cachedData[`${state.dataset}_${state.scale}`];
+    const fd    = cachedData[`${state.dataset}_raw`];
     const vals  = fd ? fd.X.map(row => row[state.colorBy]) : emb.labels;
     const fname = datasetInfo[state.dataset]?.feature_names?.[state.colorBy]
                   || `feature ${state.colorBy}`;
