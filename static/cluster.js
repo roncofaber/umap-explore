@@ -1,6 +1,6 @@
 import { state } from './state.js';
 import { els } from './elements.js';
-import { MCS_STEPS, MS_STEPS, CSE_STEPS, TICK_FONT, AXIS_LABEL_FONT } from './constants.js';
+import { MCS_STEPS, MS_STEPS, CSE_STEPS, TICK_FONT, AXIS_LABEL_FONT, LEGEND_MAX_HEIGHT } from './constants.js';
 import { fetchClusterResult } from './api.js';
 import { updateLegend, rerenderColors } from './legend.js';
 import { positionAllTicks, setLoading } from './ui.js';
@@ -89,7 +89,8 @@ function renderTreePlot(data) {
     bargap: 0,
     showlegend: selected_clusters.length > 0,
     legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.18,
-              font: { family: SANS, size: 12, color: '#515978' } },
+              font: { family: SANS, size: 12, color: '#515978' },
+              maxheight: LEGEND_MAX_HEIGHT },
     shapes, annotations,
     xaxis: { visible: false, showgrid: false, zeroline: false,
              range: [xMin - xPad, xMax + xPad] },
