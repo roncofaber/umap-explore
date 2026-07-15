@@ -67,7 +67,10 @@
           </div>
         </details>
 
-        <div class="params-divider">Method</div>
+        <div class="params-divider">
+          Method
+          <span class="param-q" data-tip="UMAP preserves local and global topology, ideal for exploring cluster structure. PCA is linear and fast, showing directions of maximum variance. t-SNE emphasises local cluster separation; distances between clusters are less interpretable.">?</span>
+        </div>
 
         <div class="control-group">
           <div class="param-block">
@@ -214,7 +217,7 @@
 
         <div class="params-divider">
           View
-          <span class="param-q" data-tip="In tree view the y-axis is λ (1/distance). Bar height spans the λ range a cluster persists — taller means longer-persisting; width at any level is the point count. Bars narrow as points fall off. Coloured outlines mark selected clusters; horizontal lines show where a parent splits into children.">?</span>
+          <span class="param-q" data-tip="In tree view the y-axis is λ (1/distance). Bar height spans the λ range a cluster persists (taller = longer-persisting); width at any level is the point count. Bars narrow as points fall off. Coloured outlines mark selected clusters; horizontal lines show where a parent splits into children.">?</span>
         </div>
 
         <div class="control-group">
@@ -229,7 +232,7 @@
         <div id="hdbscan-color-section">
           <div class="params-divider">
             Color
-            <span class="param-q" data-tip="cluster: points coloured by their assigned cluster label. probability: points coloured by membership strength — 0 is noise or a border point, 1 is a core cluster member.">?</span>
+            <span class="param-q" data-tip="cluster: points coloured by their assigned cluster label. probability: points coloured by membership strength (0 = noise or border point, 1 = core cluster member).">?</span>
           </div>
           <div class="control-group">
             <div class="param-block">
@@ -247,7 +250,7 @@
           <div class="param-header">
             <span>min_cluster_size</span>
             <input type="number" id="mcs-value" class="param-input" value="15" min="2" max="500" step="1">
-            <span class="param-q" data-tip="The minimum number of points required to form a cluster. This is the primary parameter — set it to the smallest group size you consider meaningful. It also controls what counts as a genuine split in the condensed tree.">?</span>
+            <span class="param-q" data-tip="The minimum number of points required to form a cluster. This is the primary parameter: set it to the smallest group size you consider meaningful. It also controls what counts as a genuine split in the condensed tree.">?</span>
           </div>
           <input type="range" id="mcs-slider" min="0" max="5" step="1" value="2">
           <div class="slider-ticks">
@@ -271,7 +274,7 @@
         <div class="control-group">
           <div class="param-header">
             <span>cluster_selection_method</span>
-            <span class="param-q" data-tip="'eom' (Excess of Mass) selects clusters by maximising total stability — tends to return fewer, larger clusters. 'leaf' always selects the leaf nodes of the condensed tree — returns many smaller, more homogeneous clusters.">?</span>
+            <span class="param-q" data-tip="'eom' (Excess of Mass) selects clusters by maximising total stability, tending to return fewer, larger clusters. 'leaf' always selects the leaf nodes of the condensed tree, returning many smaller, more homogeneous clusters.">?</span>
           </div>
           <div class="param-block">
             <div class="toggle-group">
@@ -285,7 +288,7 @@
           <div class="param-header">
             <span>cluster_selection_epsilon</span>
             <input type="number" id="cse-value" class="param-input" value="0" min="0" step="0.1">
-            <span class="param-q" data-tip="A distance threshold that prevents clusters from being split below this scale. In the condensed tree, the dashed red line marks λ = 1/ε — any cluster split below this line is suppressed. Set to 0 for standard HDBSCAN. Values above 1 are valid for high-dimensional or large-scale data.">?</span>
+            <span class="param-q" data-tip="A distance threshold that prevents clusters from being split below this scale. In the condensed tree, the dashed red line marks λ = 1/ε; any cluster split below this line is suppressed. Set to 0 for standard HDBSCAN. Values above 1 are valid for high-dimensional or large-scale data.">?</span>
           </div>
           <input type="range" id="cse-slider" min="0" max="6" step="1" value="0">
           <div class="slider-ticks">
