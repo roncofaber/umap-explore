@@ -21,6 +21,7 @@ import argparse
 import itertools
 import json
 import sys
+from collections import deque
 from pathlib import Path
 
 import h5py
@@ -153,83 +154,152 @@ def precompute_tsne(dataset_name, output_dir, perplexity_list, metrics_list, sca
     print(f"Done. Saved to {out_file}")
 
 
-# ── Procrustes alignment ──────────────────────────────────────────────────────
+# ── BFS-chained Procrustes alignment ─────────────────────────────────────────
+
+# Default reference: UMAP(15, 0.1, euclidean, scaled) and t-SNE(perplexity=30).
+# Cross-method bridges connect at these default parameter values.
+_REF_NN, _REF_MD, _REF_METRIC, _REF_SCALE = 15, 0.1, 'euclidean', 'scaled'
+_REF_PERP = 30
+
+
+def _parse_key(key):
+    """Return (method, params_dict) for any embedding key."""
+    if key.startswith('tsne_'):
+        perp_str, metric, scale = key[5:].split('_', 2)
+        return 'tsne', {'perplexity': int(perp_str), 'metric': metric, 'scale': scale}
+    if key.startswith('pca_'):
+        return 'pca', {'scale': key.split('_')[2]}
+    parts = key.split('_')           # nn_md_nc_metric_scale
+    return 'umap', {'n_neighbors': int(parts[0]), 'min_dist': float(parts[1]),
+                    'metric': parts[3], 'scale': parts[4]}
+
+
+def _step_dist(val, other, lst):
+    try:
+        return abs(lst.index(val) - lst.index(other))
+    except ValueError:
+        return 999
+
+
+def _are_adjacent(k1, k2, nn_list, md_list, perp_list):
+    """True if two embedding keys are one step apart in the alignment graph."""
+    m1, p1 = _parse_key(k1)
+    m2, p2 = _parse_key(k2)
+
+    if m1 == m2 == 'umap':
+        nn_d  = _step_dist(p1['n_neighbors'], p2['n_neighbors'], nn_list)
+        md_d  = _step_dist(p1['min_dist'],    p2['min_dist'],    md_list)
+        met_d = 0 if p1['metric'] == p2['metric'] else 1
+        sc_d  = 0 if p1['scale']  == p2['scale']  else 1
+        return nn_d + md_d + met_d + sc_d == 1 and nn_d <= 1 and md_d <= 1
+
+    if m1 == m2 == 'tsne':
+        perp_d = _step_dist(p1['perplexity'], p2['perplexity'], perp_list)
+        met_d  = 0 if p1['metric'] == p2['metric'] else 1
+        sc_d   = 0 if p1['scale']  == p2['scale']  else 1
+        return perp_d + met_d + sc_d == 1 and perp_d <= 1
+
+    if m1 == m2 == 'pca':
+        return p1['scale'] != p2['scale']
+
+    # Cross-method bridges: connect at default parameter values
+    methods = {m1: p1, m2: p2}
+
+    if {m1, m2} == {'umap', 'tsne'}:
+        up, tp = methods['umap'], methods['tsne']
+        return (up['n_neighbors'] == _REF_NN and up['min_dist'] == _REF_MD and
+                tp['perplexity'] == _REF_PERP and
+                up['metric'] == tp['metric'] and up['scale'] == tp['scale'])
+
+    if {m1, m2} == {'umap', 'pca'}:
+        up, pp = methods['umap'], methods['pca']
+        return (up['n_neighbors'] == _REF_NN and up['min_dist'] == _REF_MD and
+                up['metric'] == 'euclidean' and up['scale'] == pp['scale'])
+
+    if {m1, m2} == {'tsne', 'pca'}:
+        tp, pp = methods['tsne'], methods['pca']
+        return (tp['perplexity'] == _REF_PERP and tp['metric'] == 'euclidean' and
+                tp['scale'] == pp['scale'])
+
+    return False
+
 
 def _align_dataset(dataset_name, output_dir: Path,
                    n_neighbors_list, min_dist_list, n_components_list,
                    metrics_list, scales_list):
     """
-    Align ALL embeddings in the dataset (UMAP across all params, PCA, all metrics
-    and scales) to a single universal reference using Orthogonal Procrustes
-    (rotation + optional reflection, no scaling).
+    BFS-chained Procrustes alignment across the full embedding space.
 
-    Reference: UMAP with standard parameters — n_neighbors=15, min_dist=0.1,
-    metric=euclidean, scale=scaled.  If that key is absent, falls back to the
-    first available key.
+    Instead of aligning every embedding directly to a global reference, we do a
+    breadth-first traversal of the parameter graph and align each embedding to
+    its nearest already-aligned neighbour. Adjacent embeddings differ by exactly
+    one step in one parameter. Cross-method bridges connect at default values
+    (UMAP 15/0.1, t-SNE perplexity=30) for matching (metric, scale) pairs.
 
-    Aligned coordinates are stored as x_aligned / y_aligned alongside the
-    original x / y — originals are never modified.
+    Result: transitions between adjacent parameter values are maximally smooth;
+    the orientation stays consistent across the full dataset.
     """
     path = output_dir / f'{dataset_name}.h5'
     if not path.exists():
         print(f'{dataset_name}: no HDF5 file, skipping')
         return
 
-    # Universal reference: standard UMAP parameters
-    ref_nn = 15  if 15  in n_neighbors_list  else n_neighbors_list[0]
-    ref_md = 0.1 if 0.1 in min_dist_list     else min_dist_list[0]
-    ref_key = make_key(ref_nn, ref_md, 2, 'euclidean', 'scaled')
-
-    # Collect every embedding key that should be aligned
-    all_keys = [
-        make_key(nn, md, nc, metric, scale)
-        for nn, md, nc, metric, scale in itertools.product(
-            n_neighbors_list, min_dist_list, n_components_list,
-            metrics_list, scales_list)
-    ] + [f'pca_3_{scale}' for scale in scales_list] + [
-        make_tsne_key(perp, metric, scale)
-        for perp, metric, scale in itertools.product(
-            PERPLEXITY_STEPS, metrics_list, scales_list)
-    ]
+    ref_key = make_key(_REF_NN, _REF_MD, 2, _REF_METRIC, _REF_SCALE)
 
     with h5py.File(path, 'a') as f:
-        # Find the reference; fall back to first available key if missing
+        present = [k for k in f.keys() if k != '_meta']
+        if not present:
+            print(f'{dataset_name}: no embeddings, skipping')
+            return
+
         if ref_key not in f:
-            fallback = next((k for k in all_keys if k in f), None)
-            if fallback is None:
-                print(f'{dataset_name}: no embeddings found, skipping')
-                return
-            print(f'{dataset_name}: reference {ref_key!r} missing, using {fallback!r}')
-            ref_key = fallback
+            ref_key = present[0]
+            print(f'{dataset_name}: default reference missing, falling back to {ref_key!r}')
 
-        ref   = np.column_stack([f[ref_key]['x'][()], f[ref_key]['y'][()]])
-        ref_mu = ref.mean(axis=0)
-        ref_c  = ref - ref_mu
+        # BFS: aligned_coords maps key → already-aligned np.ndarray
+        aligned_coords = {}
+        ref_emb = np.column_stack([f[ref_key]['x'][()], f[ref_key]['y'][()]])
+        aligned_coords[ref_key] = ref_emb
 
-        aligned_count = 0
-        for key in all_keys:
-            if key not in f:
-                continue
-            if key == ref_key:
+        grp = f[ref_key]
+        for ax in ('x_aligned', 'y_aligned'):
+            if ax in grp: del grp[ax]
+        grp.create_dataset('x_aligned', data=ref_emb[:, 0])
+        grp.create_dataset('y_aligned', data=ref_emb[:, 1])
+
+        queue = deque([ref_key])
+        while queue:
+            cur_key = queue.popleft()
+            cur_emb = aligned_coords[cur_key]
+            cur_mu  = cur_emb.mean(axis=0)
+            cur_c   = cur_emb - cur_mu
+
+            for nb_key in present:
+                if nb_key in aligned_coords:
+                    continue
+                if not _are_adjacent(cur_key, nb_key,
+                                     n_neighbors_list, min_dist_list, PERPLEXITY_STEPS):
+                    continue
+
+                nb_raw = np.column_stack([f[nb_key]['x'][()], f[nb_key]['y'][()]])
+                nb_c   = nb_raw - nb_raw.mean(axis=0)
+                Q, _   = orthogonal_procrustes(nb_c, cur_c)
+                aligned = nb_c @ Q + cur_mu
+
+                aligned_coords[nb_key] = aligned
+                queue.append(nb_key)
+
+                grp = f[nb_key]
                 for ax in ('x_aligned', 'y_aligned'):
-                    if ax in f[key]: del f[key][ax]
-                f[key].create_dataset('x_aligned', data=f[key]['x'][()])
-                f[key].create_dataset('y_aligned', data=f[key]['y'][()])
-                aligned_count += 1
-                continue
+                    if ax in grp: del grp[ax]
+                grp.create_dataset('x_aligned', data=aligned[:, 0])
+                grp.create_dataset('y_aligned', data=aligned[:, 1])
 
-            tgt   = np.column_stack([f[key]['x'][()], f[key]['y'][()]])
-            tgt_c = tgt - tgt.mean(axis=0)
-            Q, _  = orthogonal_procrustes(tgt_c, ref_c)
-            aligned = tgt_c @ Q + ref_mu
-
-            for ax in ('x_aligned', 'y_aligned'):
-                if ax in f[key]: del f[key][ax]
-            f[key].create_dataset('x_aligned', data=aligned[:, 0])
-            f[key].create_dataset('y_aligned', data=aligned[:, 1])
-            aligned_count += 1
-
-    print(f'{dataset_name}: aligned {aligned_count} embeddings to ref={ref_key}')
+        reached = len(aligned_coords)
+        print(f'{dataset_name}: BFS-chained alignment — {reached}/{len(present)} embeddings reached')
+        if reached < len(present):
+            missed = sorted(set(present) - set(aligned_coords))
+            print(f'  Unreachable (no path from reference): {missed[:5]}{"..." if len(missed) > 5 else ""}')
 
 
 # ── JSON → HDF5 migration ──────────────────────────────────────────────────────
