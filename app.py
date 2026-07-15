@@ -10,7 +10,7 @@ import colorcet as cc
 import h5py
 import numpy as np
 import hdbscan as hdbscan_lib
-from datasets.meta import DATASETS_META, make_key
+from datasets.meta import DATASETS_META, make_key, make_tsne_key
 
 
 def _label_colors(label_names: list | None) -> list | None:
@@ -33,6 +33,15 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 def _h5(dataset_name: str) -> Path:
     return EMBEDDINGS_DIR / f"{dataset_name}.h5"
+
+
+def _embedding_key(method, n_neighbors, min_dist, n_components, metric, scale, perplexity=30):
+    if method == 'pca':  return f"pca_3_{scale}"
+    if method == 'tsne': return make_tsne_key(perplexity, metric, scale)
+    return make_key(n_neighbors, min_dist, n_components, metric, scale)
+
+
+_PC_COLS = {0: 'x', 1: 'y', 2: 'z'}
 
 
 @app.get("/health")
@@ -101,7 +110,8 @@ def get_data(
 
 
 def _get_cluster_coords(dataset_name, method, n_neighbors, min_dist,
-                        n_components, metric, scale, cluster_on, path):
+                        n_components, metric, scale, cluster_on, path,
+                        perplexity=30, pc_x=0, pc_y=1):
     """Shared helper: return the coordinate matrix to cluster on."""
     if cluster_on == 'data':
         with h5py.File(path, 'r') as f:
@@ -114,12 +124,19 @@ def _get_cluster_coords(dataset_name, method, n_neighbors, min_dist,
             X_key = 'X_scaled' if scale == 'scaled' else 'X_raw'
             return m[X_key][()]
     else:
-        key = (f"pca_{n_components}_{scale}" if method == 'pca'
-               else make_key(n_neighbors, min_dist, n_components, metric, scale))
+        key = _embedding_key(method, n_neighbors, min_dist, n_components, metric, scale, perplexity)
         with h5py.File(path, 'r') as f:
             if key not in f:
                 raise HTTPException(status_code=404, detail=f"No embedding for key '{key}'")
-            return np.column_stack([f[key]['x'][()], f[key]['y'][()]])
+            grp = f[key]
+            if method == 'pca':
+                cx, cy = _PC_COLS[pc_x], _PC_COLS[pc_y]
+                x = grp.get(cx + '_aligned', grp[cx])[()]
+                y = grp.get(cy + '_aligned', grp[cy])[()]
+            else:
+                x = grp['x_aligned'][()] if 'x_aligned' in grp else grp['x'][()]
+                y = grp['y_aligned'][()] if 'y_aligned' in grp else grp['y'][()]
+            return np.column_stack([x, y])
 
 
 def _hdbscan_params(min_cluster_size, min_samples, cluster_selection_method,
@@ -136,12 +153,15 @@ def _hdbscan_params(min_cluster_size, min_samples, cluster_selection_method,
 @app.get("/api/cluster/{dataset_name}")
 def get_cluster(
     dataset_name: str,
-    method: Literal['umap', 'pca'] = Query('umap'),
+    method: Literal['umap', 'pca', 'tsne'] = Query('umap'),
     n_neighbors: int = Query(15, ge=1),
     min_dist: float = Query(0.1, ge=0.0, le=2.0),
     n_components: int = Query(2, ge=2, le=2),
     metric: Literal['euclidean', 'cosine', 'manhattan', 'correlation'] = Query('euclidean'),
     scale: Literal['scaled', 'raw'] = Query('scaled'),
+    perplexity: int = Query(30, ge=1),
+    pc_x: int = Query(0, ge=0, le=2),
+    pc_y: int = Query(1, ge=0, le=2),
     min_cluster_size: int = Query(15, ge=2),
     min_samples: int = Query(5, ge=1),
     cluster_selection_method: Literal['eom', 'leaf'] = Query('eom'),
@@ -158,7 +178,8 @@ def get_cluster(
         raise HTTPException(status_code=404, detail=f"No embeddings for '{dataset_name}'")
 
     coords = _get_cluster_coords(dataset_name, method, n_neighbors, min_dist,
-                                  n_components, metric, scale, cluster_on, path)
+                                  n_components, metric, scale, cluster_on, path,
+                                  perplexity=perplexity, pc_x=pc_x, pc_y=pc_y)
     clusterer = hdbscan_lib.HDBSCAN(
         **_hdbscan_params(min_cluster_size, min_samples, cluster_selection_method,
                           cluster_selection_epsilon, allow_single_cluster)
@@ -224,12 +245,15 @@ def _condensed_tree_plot_data(clusterer, palette):
 @app.get("/api/cluster/{dataset_name}/tree")
 def get_cluster_tree(
     dataset_name: str,
-    method: Literal['umap', 'pca'] = Query('umap'),
+    method: Literal['umap', 'pca', 'tsne'] = Query('umap'),
     n_neighbors: int = Query(15, ge=1),
     min_dist: float = Query(0.1, ge=0.0, le=2.0),
     n_components: int = Query(2, ge=2, le=2),
     metric: Literal['euclidean', 'cosine', 'manhattan', 'correlation'] = Query('euclidean'),
     scale: Literal['scaled', 'raw'] = Query('scaled'),
+    perplexity: int = Query(30, ge=1),
+    pc_x: int = Query(0, ge=0, le=2),
+    pc_y: int = Query(1, ge=0, le=2),
     min_cluster_size: int = Query(15, ge=2),
     min_samples: int = Query(5, ge=1),
     cluster_selection_method: Literal['eom', 'leaf'] = Query('eom'),
@@ -246,7 +270,8 @@ def get_cluster_tree(
         raise HTTPException(status_code=404, detail=f"No embeddings for '{dataset_name}'")
 
     coords = _get_cluster_coords(dataset_name, method, n_neighbors, min_dist,
-                                  n_components, metric, scale, cluster_on, path)
+                                  n_components, metric, scale, cluster_on, path,
+                                  perplexity=perplexity, pc_x=pc_x, pc_y=pc_y)
     palette = cc.glasbey_dark
     clusterer = hdbscan_lib.HDBSCAN(
         **_hdbscan_params(min_cluster_size, min_samples, cluster_selection_method,
@@ -273,12 +298,15 @@ def get_cluster_tree(
 @app.get("/api/embeddings/{dataset_name}")
 def get_embedding(
     dataset_name: str,
-    method: Literal['umap', 'pca'] = Query('umap'),
+    method: Literal['umap', 'pca', 'tsne'] = Query('umap'),
     n_neighbors: int = Query(15, ge=1),
     min_dist: float = Query(0.1, ge=0.0, le=2.0),
     n_components: int = Query(2, ge=2, le=2),
     metric: Literal['euclidean', 'cosine', 'manhattan', 'correlation'] = Query('euclidean'),
     scale: Literal['scaled', 'raw'] = Query('scaled'),
+    perplexity: int = Query(30, ge=1),
+    pc_x: int = Query(0, ge=0, le=2),
+    pc_y: int = Query(1, ge=0, le=2),
 ):
     if not re.match(r'^[a-zA-Z0-9_]+$', dataset_name):
         raise HTTPException(status_code=400, detail="Invalid dataset name")
@@ -287,23 +315,26 @@ def get_embedding(
     path = _h5(dataset_name)
     if not path.exists():
         raise HTTPException(status_code=404, detail=f"No embeddings for '{dataset_name}'")
-    key = f"pca_{n_components}_{scale}" if method == 'pca' else make_key(n_neighbors, min_dist, n_components, metric, scale)
+    key = _embedding_key(method, n_neighbors, min_dist, n_components, metric, scale, perplexity)
     with h5py.File(path, 'r') as f:
         if key not in f:
             raise HTTPException(status_code=404, detail=f"No embedding for key '{key}'")
         grp = f[key]
         m = f['_meta']
-        # Use Procrustes-aligned coordinates when available (--action align),
-        # falling back to originals so the app works before alignment is run.
-        x_key = 'x_aligned' if 'x_aligned' in grp else 'x'
-        y_key = 'y_aligned' if 'y_aligned' in grp else 'y'
+        # For PCA, select the requested component columns; otherwise always x/y.
+        # Use Procrustes-aligned coordinates when available, falling back to originals.
+        cx = _PC_COLS[pc_x] if method == 'pca' else 'x'
+        cy = _PC_COLS[pc_y] if method == 'pca' else 'y'
+        xa = cx + '_aligned'; ya = cy + '_aligned'
+        x_data = grp[xa][()] if xa in grp else grp[cx][()]
+        y_data = grp[ya][()] if ya in grp else grp[cy][()]
+        aligned = xa in grp
+        evr = grp['explained_variance_ratio'][()].tolist() if 'explained_variance_ratio' in grp else None
         return {
-            'x': grp[x_key][()].tolist(),
-            'y': grp[y_key][()].tolist(),
-            'z': grp['z'][()].tolist() if 'z' in grp else None,
+            'x': x_data.tolist(),
+            'y': y_data.tolist(),
             'labels': m['labels'][()].tolist(),
             'label_names': _decode(m['label_names'][()]) if 'label_names' in m else None,
-            'explained_variance_ratio': grp['explained_variance_ratio'][()].tolist()
-                                        if 'explained_variance_ratio' in grp else None,
-            'aligned': x_key == 'x_aligned',
+            'explained_variance_ratio': evr,
+            'aligned': aligned,
         }

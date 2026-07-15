@@ -10,6 +10,9 @@ export async function fetchEmbedding() {
     n_components: 2,
     metric:       state.metric,
     scale:        state.scale,
+    perplexity:   state.perplexity,
+    pc_x:         state.pcX,
+    pc_y:         state.pcY,
   });
   const resp = await fetch(`/api/embeddings/${state.dataset}?${params}`);
   if (!resp.ok) throw new Error(`API error ${resp.status}`);
@@ -24,6 +27,9 @@ export async function fetchClusterResult() {
     n_components:               2,
     metric:                     state.metric,
     scale:                      state.scale,
+    perplexity:                 state.perplexity,
+    pc_x:                       state.pcX,
+    pc_y:                       state.pcY,
     min_cluster_size:           state.minClusterSize,
     min_samples:                state.minSamples,
     cluster_selection_method:   state.clusterSelectionMethod,

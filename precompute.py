@@ -28,16 +28,18 @@ import numpy as np
 import umap
 from scipy.linalg import orthogonal_procrustes
 from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
 from sklearn.preprocessing import StandardScaler
 
 from datasets import DATASETS
-from datasets.meta import make_key
+from datasets.meta import make_key, make_tsne_key
 
-N_NEIGHBORS  = [5, 10, 15, 20, 30, 50, 100]
-MIN_DIST     = [0.0, 0.05, 0.1, 0.25, 0.5, 1.0]
-N_COMPONENTS = [2]
-METRICS      = ['euclidean', 'cosine', 'manhattan', 'correlation']
-SCALE        = ['scaled', 'raw']
+N_NEIGHBORS     = [5, 10, 15, 20, 30, 50, 100]
+MIN_DIST        = [0.0, 0.05, 0.1, 0.25, 0.5, 1.0]
+N_COMPONENTS    = [2]
+METRICS         = ['euclidean', 'cosine', 'manhattan', 'correlation']
+SCALE           = ['scaled', 'raw']
+PERPLEXITY_STEPS = [5, 15, 30, 50, 100]
 
 
 # ── Embedding computation ──────────────────────────────────────────────────────
@@ -92,22 +94,60 @@ def precompute_dataset(dataset_name, output_dir, n_neighbors_list, min_dist_list
             f.flush()
 
         for scale in scales_list:
-            pca_key = f"pca_2_{scale}"
+            pca_key = f"pca_3_{scale}"
             if pca_key in f:
-                # Recompute only if explained_variance_ratio is missing (fast, < 1s)
-                if 'explained_variance_ratio' in f[pca_key]:
+                if 'explained_variance_ratio' in f[pca_key] and 'z' in f[pca_key]:
                     print(f"PCA ({scale}) — skipping (cached)")
                     continue
-                print(f"PCA ({scale}) — refreshing (missing variance ratio)...")
+                print(f"PCA ({scale}) — refreshing...")
                 del f[pca_key]
-            print(f"PCA ({scale}) — computing...")
-            pca = PCA(n_components=2)
+            print(f"PCA ({scale}) — computing (3 components)...")
+            n_pc = min(3, X_by_scale[scale].shape[1])
+            pca = PCA(n_components=n_pc)
             embedding = pca.fit_transform(X_by_scale[scale])
             grp = f.create_group(pca_key)
             grp.create_dataset('x', data=embedding[:, 0], compression='gzip')
             grp.create_dataset('y', data=embedding[:, 1], compression='gzip')
+            if n_pc >= 3:
+                grp.create_dataset('z', data=embedding[:, 2], compression='gzip')
             grp.create_dataset('explained_variance_ratio',
                                data=pca.explained_variance_ratio_)
+            f.flush()
+
+    print(f"Done. Saved to {out_file}")
+
+
+# ── t-SNE precomputation ──────────────────────────────────────────────────────
+
+def precompute_tsne(dataset_name, output_dir, perplexity_list, metrics_list, scales_list):
+    dataset = DATASETS[dataset_name]
+    data = dataset['loader']()
+    X_raw    = data['X'].astype(float)
+    X_scaled = StandardScaler().fit_transform(X_raw)
+    X_by_scale = {'scaled': X_scaled, 'raw': X_raw}
+
+    output_dir = Path(output_dir)
+    out_file = output_dir / f"{dataset_name}.h5"
+    if not out_file.exists():
+        print(f"{dataset_name}: no HDF5 file yet — run --action compute first")
+        return
+
+    combos = list(itertools.product(perplexity_list, metrics_list, scales_list))
+    with h5py.File(out_file, 'a') as f:
+        for i, (perp, metric, scale) in enumerate(combos):
+            key = make_tsne_key(perp, metric, scale)
+            if key in f:
+                print(f"[{i+1}/{len(combos)}] {key} — skipping (cached)")
+                continue
+            print(f"[{i+1}/{len(combos)}] {key} — computing...")
+            init = 'pca' if metric == 'euclidean' else 'random'
+            embedding = TSNE(
+                n_components=2, perplexity=perp, metric=metric,
+                init=init, learning_rate='auto', n_iter=500, random_state=42,
+            ).fit_transform(X_by_scale[scale])
+            grp = f.create_group(key)
+            grp.create_dataset('x', data=embedding[:, 0], compression='gzip')
+            grp.create_dataset('y', data=embedding[:, 1], compression='gzip')
             f.flush()
 
     print(f"Done. Saved to {out_file}")
@@ -146,7 +186,11 @@ def _align_dataset(dataset_name, output_dir: Path,
         for nn, md, nc, metric, scale in itertools.product(
             n_neighbors_list, min_dist_list, n_components_list,
             metrics_list, scales_list)
-    ] + [f'pca_2_{scale}' for scale in scales_list]
+    ] + [f'pca_3_{scale}' for scale in scales_list] + [
+        make_tsne_key(perp, metric, scale)
+        for perp, metric, scale in itertools.product(
+            PERPLEXITY_STEPS, metrics_list, scales_list)
+    ]
 
     with h5py.File(path, 'a') as f:
         # Find the reference; fall back to first available key if missing
@@ -269,10 +313,10 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--action',
-                        choices=['compute', 'align', 'add-features', 'all',
-                                 'convert-json'],
+                        choices=['compute', 'tsne', 'align', 'add-features',
+                                 'all', 'convert-json'],
                         default='compute',
-                        help='"all" runs compute → add-features → align in sequence')
+                        help='"all" runs compute → tsne → add-features → align')
     parser.add_argument('--dataset', choices=list(DATASETS.keys()))
     parser.add_argument('--output-dir', default='data/embeddings')
     # Compute-only options
@@ -289,12 +333,17 @@ def main():
 
     if args.action in ('compute', 'all'):
         for name in targets:
-            print(f"\n=== Precomputing {name} ===")
+            print(f"\n=== Precomputing UMAP + PCA {name} ===")
             precompute_dataset(
                 name, output_dir,
                 args.n_neighbors, args.min_dist, args.n_components,
                 args.metric, args.scale,
             )
+
+    if args.action in ('tsne', 'all'):
+        for name in targets:
+            print(f"\n=== Precomputing t-SNE {name} ===")
+            precompute_tsne(name, output_dir, PERPLEXITY_STEPS, args.metric, args.scale)
 
     if args.action in ('add-features', 'all'):
         _add_features(targets, output_dir)

@@ -139,9 +139,19 @@ export function makeTrace(emb) {
 export function makeLayout(emb) {
   const W = els.plot.offsetWidth  || 700;
   const H = els.plot.offsetHeight || 700;
-  const evr = state.method === 'pca' ? state.explainedVarianceRatio : null;
-  const xTitle = evr ? `coord 1  (${(evr[0] * 100).toFixed(1)}%)` : 'coord 1';
-  const yTitle = evr ? `coord 2  (${(evr[1] * 100).toFixed(1)}%)` : 'coord 2';
+  const evr = state.explainedVarianceRatio;
+  const PC = ['PC1', 'PC2', 'PC3'];
+  let xTitle, yTitle;
+  if (state.method === 'tsne') {
+    xTitle = 't-SNE 1'; yTitle = 't-SNE 2';
+  } else if (state.method === 'pca' && evr) {
+    xTitle = `${PC[state.pcX]}  (${(evr[state.pcX] * 100).toFixed(1)}%)`;
+    yTitle = `${PC[state.pcY]}  (${(evr[state.pcY] * 100).toFixed(1)}%)`;
+  } else if (state.method === 'pca') {
+    xTitle = PC[state.pcX]; yTitle = PC[state.pcY];
+  } else {
+    xTitle = 'coord 1'; yTitle = 'coord 2';
+  }
   return {
     margin: MARGIN,
     paper_bgcolor: '#eef0f5',

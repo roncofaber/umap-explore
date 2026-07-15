@@ -20,7 +20,10 @@ export const state = {
   clusterOn:                'projection', // 'projection' | 'data'
   clusterView:              'scatter',    // 'scatter' | 'tree'
   clusterResult:            null,
-  explainedVarianceRatio:   null,    // [pc1, pc2] from PCA, null otherwise
+  explainedVarianceRatio:   null,    // [pc1, pc2, pc3] from PCA, null otherwise
+  perplexity:               30,      // t-SNE perplexity
+  pcX:                      0,       // PCA: which component on x-axis (0=PC1, 1=PC2, 2=PC3)
+  pcY:                      1,       // PCA: which component on y-axis
   pointSize:                5,
   pointOpacity:             0.8,
 };

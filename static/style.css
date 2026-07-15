@@ -376,19 +376,14 @@ select:focus, select:hover { border-color: var(--accent); }
   background: var(--border);
 }
 
-/* ── UMAP-specific params (disabled when PCA selected) ──────────────────── */
-#umap-params {
+/* ── Method-specific param sections ─────────────────────────────────────── */
+#umap-params, #tsne-params, #pca-params {
   display: flex;
   flex-direction: column;
   gap: var(--gap-section);
-  transition: opacity 0.2s;
 }
 
-#umap-params.params-disabled {
-  opacity: 0.35;
-  pointer-events: none;
-  user-select: none;
-}
+#umap-params[hidden], #tsne-params[hidden], #pca-params[hidden] { display: none; }
 
 /* ── Control groups ──────────────────────── */
 .control-group {

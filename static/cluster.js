@@ -129,6 +129,7 @@ export async function fetchTree() {
     const params = new URLSearchParams({
       method: state.method, n_neighbors: state.nNeighbors, min_dist: state.minDist,
       n_components: 2, metric: state.metric, scale: state.scale,
+      perplexity: state.perplexity, pc_x: state.pcX, pc_y: state.pcY,
       min_cluster_size: state.minClusterSize, min_samples: state.minSamples,
       cluster_selection_method: state.clusterSelectionMethod,
       cluster_selection_epsilon: state.clusterSelectionEpsilon,

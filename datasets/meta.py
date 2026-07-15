@@ -38,5 +38,10 @@ DATASETS_META = {
 
 
 def make_key(n_neighbors, min_dist, n_components, metric, scale):
-    """Return the HDF5 group key for a given parameter combination."""
+    """Return the HDF5 group key for a given UMAP parameter combination."""
     return f"{n_neighbors}_{min_dist}_{n_components}_{metric}_{scale}"
+
+
+def make_tsne_key(perplexity, metric, scale):
+    """Return the HDF5 group key for a given t-SNE parameter combination."""
+    return f"tsne_{perplexity}_{metric}_{scale}"

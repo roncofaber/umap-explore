@@ -101,9 +101,15 @@ export function positionTicks(slider) {
 }
 
 export function positionAllTicks() {
-  [els.nnSlider, els.mdSlider, els.mcsSlider, els.msSlider, els.cseSlider]
+  [els.nnSlider, els.mdSlider, els.perpSlider, els.mcsSlider, els.msSlider, els.cseSlider]
     .filter(Boolean)
     .forEach(positionTicks);
+}
+
+export function showMethodParams(method) {
+  els.umapParams.hidden = method !== 'umap';
+  els.tsneParams.hidden = method !== 'tsne';
+  els.pcaParams.hidden  = method !== 'pca';
 }
 
 // ── Tooltips ──────────────────────────────────────────────────────────────────

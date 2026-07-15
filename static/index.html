@@ -74,6 +74,7 @@
             <div class="toggle-group">
               <button id="method-umap" class="toggle active">UMAP</button>
               <button id="method-pca" class="toggle">PCA</button>
+              <button id="method-tsne" class="toggle">t-SNE</button>
             </div>
           </div>
         </div>
@@ -135,7 +136,58 @@
               <option value="correlation">correlation</option>
             </select>
           </div>
-        </div>
+        </div><!-- /umap-params -->
+
+        <!-- ── t-SNE params ── -->
+        <div id="tsne-params" hidden>
+          <div class="params-divider">
+            Parameters
+          </div>
+
+          <div class="control-group">
+            <div class="param-header">
+              <span>perplexity</span>
+              <span class="param-value" id="perp-value">30</span>
+              <span class="param-q" data-tip="Controls the effective number of neighbours each point considers. Low values reveal tight local clusters; high values emphasise the global layout. Typical range: 5–100.">?</span>
+            </div>
+            <input type="range" id="perp-slider" min="0" max="4" step="1" value="2">
+            <div class="slider-ticks">
+              <span>5</span><span>15</span><span>30</span><span>50</span><span>100</span>
+            </div>
+          </div>
+
+          <div class="control-group">
+            <div class="param-header">
+              <span>metric</span>
+              <span class="param-q" data-tip="How distances between points are measured in the original space. Different metrics can reveal very different structure in your data.">?</span>
+            </div>
+            <select id="tsne-metric-select" class="param-select">
+              <option value="euclidean">euclidean</option>
+              <option value="cosine">cosine</option>
+              <option value="manhattan">manhattan</option>
+              <option value="correlation">correlation</option>
+            </select>
+          </div>
+        </div><!-- /tsne-params -->
+
+        <!-- ── PCA params ── -->
+        <div id="pca-params" hidden>
+          <div class="params-divider">Components</div>
+
+          <div class="control-group">
+            <div class="param-header">
+              <span>show components</span>
+              <span class="param-q" data-tip="Choose which pair of principal components to display. PC1 explains the most variance; later components can reveal additional structure.">?</span>
+            </div>
+            <div class="param-block">
+              <div class="toggle-group">
+                <button id="pc-12" class="toggle active">PC1 / 2</button>
+                <button id="pc-13" class="toggle">PC1 / 3</button>
+                <button id="pc-23" class="toggle">PC2 / 3</button>
+              </div>
+            </div>
+          </div>
+        </div><!-- /pca-params -->
 
         <div class="control-group" id="color-by-group" hidden>
           <div class="param-header">

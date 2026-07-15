@@ -1,6 +1,6 @@
 import { state, datasetInfo } from './state.js';
 import { els } from './elements.js';
-import { N_NEIGHBORS_STEPS, MIN_DIST_STEPS } from './constants.js';
+import { N_NEIGHBORS_STEPS, MIN_DIST_STEPS, PERPLEXITY_STEPS } from './constants.js';
 import { fetchEmbedding, ensureFeatureData } from './api.js';
 import { renderPlot, getCurrentEmb, setPlotCallbacks } from './plot.js';
 import { updateLegend, toggleHighlight, toggleClusterHighlight, rerenderColors } from './legend.js';
@@ -9,6 +9,7 @@ import { initCodeModal, initDataModal } from './modals.js';
 import {
   updateDatasetInfo, updateColorByOptions, onColorByChange,
   initSidebarToggle, positionAllTicks, initTooltips, setLoading,
+  showMethodParams,
 } from './ui.js';
 
 // ── Fetch + render orchestrator ───────────────────────────────────────────────
@@ -42,13 +43,20 @@ function resetParams() {
   state.metric = 'euclidean'; state.scale = 'scaled';
   state.method = 'umap'; state.highlightedLabel = null;
   state.highlightedCluster = null; state.colorBy = 'class';
+  state.perplexity = 30; state.pcX = 0; state.pcY = 1;
 
-  els.nnSlider.value = N_NEIGHBORS_STEPS.indexOf(15); els.nnValue.textContent  = 15;
-  els.mdSlider.value = MIN_DIST_STEPS.indexOf(0.1);   els.mdValue.textContent  = 0.1;
+  els.nnSlider.value = N_NEIGHBORS_STEPS.indexOf(15); els.nnValue.textContent = 15;
+  els.mdSlider.value = MIN_DIST_STEPS.indexOf(0.1);   els.mdValue.textContent = 0.1;
   els.metricSelect.value = 'euclidean';
+  els.perpSlider.value = PERPLEXITY_STEPS.indexOf(30); els.perpValue.textContent = 30;
   els.scaleOn.classList.add('active');    els.scaleOff.classList.remove('active');
-  els.methodUmap.classList.add('active'); els.methodPca.classList.remove('active');
-  els.umapParams.classList.remove('params-disabled');
+  els.methodUmap.classList.add('active');
+  els.methodPca.classList.remove('active');
+  els.methodTsne.classList.remove('active');
+  els.pc12.classList.add('active');
+  els.pc13.classList.remove('active');
+  els.pc23.classList.remove('active');
+  showMethodParams('umap');
   if (els.colorBySelect) els.colorBySelect.value = 'class';
 
   requestAnimationFrame(positionAllTicks);
@@ -75,21 +83,42 @@ function wireUmapControls() {
     fetchAndRender();
   });
 
-  els.methodUmap.addEventListener('click', () => {
-    if (state.method === 'umap') return;
-    state.method = 'umap';
-    els.methodUmap.classList.add('active'); els.methodPca.classList.remove('active');
-    els.umapParams.classList.remove('params-disabled');
+  function setMethod(m) {
+    if (state.method === m) return;
+    state.method = m;
+    els.methodUmap.classList.toggle('active', m === 'umap');
+    els.methodPca.classList.toggle('active',  m === 'pca');
+    els.methodTsne.classList.toggle('active', m === 'tsne');
+    if (m === 'tsne') els.tsneMetricSelect.value = state.metric;
+    if (m === 'umap') els.metricSelect.value = state.metric;
+    showMethodParams(m);
+    fetchAndRender();
+  }
+  els.methodUmap.addEventListener('click', () => setMethod('umap'));
+  els.methodPca.addEventListener('click',  () => setMethod('pca'));
+  els.methodTsne.addEventListener('click', () => setMethod('tsne'));
+
+  els.perpSlider.addEventListener('input', () => {
+    state.perplexity = PERPLEXITY_STEPS[parseInt(els.perpSlider.value)];
+    els.perpValue.textContent = state.perplexity;
+    scheduleRender();
+  });
+
+  els.tsneMetricSelect.addEventListener('change', () => {
+    state.metric = els.tsneMetricSelect.value;
     fetchAndRender();
   });
 
-  els.methodPca.addEventListener('click', () => {
-    if (state.method === 'pca') return;
-    state.method = 'pca';
-    els.methodPca.classList.add('active'); els.methodUmap.classList.remove('active');
-    els.umapParams.classList.add('params-disabled');
+  function setPcPair(x, y) {
+    state.pcX = x; state.pcY = y;
+    els.pc12.classList.toggle('active', x === 0 && y === 1);
+    els.pc13.classList.toggle('active', x === 0 && y === 2);
+    els.pc23.classList.toggle('active', x === 1 && y === 2);
     fetchAndRender();
-  });
+  }
+  els.pc12.addEventListener('click', () => setPcPair(0, 1));
+  els.pc13.addEventListener('click', () => setPcPair(0, 2));
+  els.pc23.addEventListener('click', () => setPcPair(1, 2));
 
   els.scaleOn.addEventListener('click', () => {
     if (state.scale === 'scaled') return;
@@ -192,6 +221,9 @@ async function init() {
     els.nnValue.textContent = state.nNeighbors;
     els.mdSlider.value = MIN_DIST_STEPS.indexOf(state.minDist);
     els.mdValue.textContent = state.minDist;
+    els.perpSlider.value = PERPLEXITY_STEPS.indexOf(state.perplexity);
+    els.perpValue.textContent = state.perplexity;
+    showMethodParams(state.method);
 
     if (datasets.length > 0) {
       state.dataset = datasets[0].name;
@@ -213,6 +245,7 @@ function resetToHome() {
   els.plotSettings.hidden = true;
   els.settingsBtn.classList.remove('active');
   if (state.tab === 'hdbscan') switchTab('umap');
+  showMethodParams('umap');
   const firstOption = els.datasetSelect.options[0];
   if (firstOption && firstOption.value !== state.dataset) {
     state.dataset = firstOption.value;

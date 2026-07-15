@@ -7,12 +7,14 @@ function generateCode() {
   const ds = DATASET_CODE[state.dataset];
   if (!ds) return '';
   const lines = [];
+  const method = state.method;
   const isHdbscan = state.tab === 'hdbscan';
 
   // Imports
-  lines.push('import umap');
-  if (isHdbscan)           lines.push('import hdbscan');
-  if (state.method === 'pca') lines.push('from sklearn.decomposition import PCA');
+  if (method === 'umap') lines.push('import umap');
+  if (method === 'tsne') lines.push('from sklearn.manifold import TSNE');
+  if (method === 'pca')  lines.push('from sklearn.decomposition import PCA');
+  if (isHdbscan)         lines.push('import hdbscan');
   lines.push(ds.imports);
   if (state.scale === 'scaled') lines.push('from sklearn.preprocessing import StandardScaler');
   lines.push('');
@@ -29,7 +31,7 @@ function generateCode() {
 
   // Embedding
   lines.push('');
-  if (state.method === 'umap' || isHdbscan) {
+  if (method === 'umap') {
     lines.push('# Reduce dimensions with UMAP');
     lines.push('reducer = umap.UMAP(');
     lines.push(`    n_neighbors=${state.nNeighbors},`);
@@ -37,11 +39,23 @@ function generateCode() {
     lines.push(`    n_components=2,`);
     lines.push(`    metric='${state.metric}',`);
     lines.push(')');
+    lines.push('embedding = reducer.fit_transform(X)');
+  } else if (method === 'tsne') {
+    lines.push('# Reduce dimensions with t-SNE');
+    lines.push('reducer = TSNE(');
+    lines.push(`    perplexity=${state.perplexity},`);
+    lines.push(`    metric='${state.metric}',`);
+    lines.push(`    n_components=2,`);
+    lines.push(`    learning_rate='auto',`);
+    lines.push(')');
+    lines.push('embedding = reducer.fit_transform(X)');
   } else {
+    const PC = ['PC1', 'PC2', 'PC3'];
     lines.push('# Reduce dimensions with PCA');
-    lines.push('reducer = PCA(n_components=2)');
+    lines.push('reducer = PCA(n_components=3)');
+    lines.push('coords = reducer.fit_transform(X)');
+    lines.push(`embedding = coords[:, [${state.pcX}, ${state.pcY}]]  # ${PC[state.pcX]} vs ${PC[state.pcY]}`);
   }
-  lines.push('embedding = reducer.fit_transform(X)');
 
   // HDBSCAN clustering
   if (isHdbscan) {
