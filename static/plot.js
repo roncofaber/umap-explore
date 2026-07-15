@@ -1,6 +1,6 @@
 import { state, datasetInfo, cachedData } from './state.js';
 import { els } from './elements.js';
-import { MARGIN, AXIS_LABEL_FONT, TICK_FONT, AXIS_BOX, LEGEND_MAX_ENTRIES, ANIM_DURATION } from './constants.js';
+import { MARGIN, AXIS_LABEL_FONT, TICK_FONT, AXIS_BOX, LEGEND_MAX_ENTRIES, ANIM_DURATION, COLORSCALE } from './constants.js';
 
 // ── Module-level state ────────────────────────────────────────────────────────
 let currentEmb = null;
@@ -68,7 +68,7 @@ export function makeTrace(emb) {
     if (state.hdbscanColor === 'probability' && probabilities) {
       // ── Color by membership strength ───────────────────────────────────
       marker.color      = probabilities;
-      marker.colorscale = [[0, NOISE_COLOR], [1, '#5469d4']];
+      marker.colorscale = COLORSCALE;
       marker.showscale  = true;
       marker.cmin = 0; marker.cmax = 1;
       marker.colorbar   = hColorbar(H, 'membership strength');
@@ -103,7 +103,7 @@ export function makeTrace(emb) {
     const fname = datasetInfo[state.dataset]?.feature_names?.[state.colorBy]
                   || `feature ${state.colorBy}`;
     marker.color      = vals;
-    marker.colorscale = 'Viridis';
+    marker.colorscale = COLORSCALE;
     marker.showscale  = true;
     marker.colorbar   = hColorbar(H, fname);
 
@@ -123,7 +123,7 @@ export function makeTrace(emb) {
   } else if (isContinuous) {
     // ── Continuous data (Swiss Roll): Viridis colorbar below ──────────────
     marker.color      = emb.labels;
-    marker.colorscale = 'Viridis';
+    marker.colorscale = COLORSCALE;
     marker.showscale  = true;
     marker.colorbar   = hColorbar(H, null);
 

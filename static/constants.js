@@ -10,6 +10,26 @@ export const PERPLEXITY_STEPS  = [5, 15, 30, 50, 100];                  // t-SNE
 // l+r = t+b = 120 → equal margins keep the axes box square
 export const MARGIN = { t: 30, r: 70, b: 110, l: 70 }; // l+r = t+b = 140 → square axes box
 
+// ── Colorscale: CET_L20 (perceptually uniform, dark → bright yellow) ─────────
+export const COLORSCALE = [
+  [0.0000, '#303030'],
+  [0.0667, '#3c365b'],
+  [0.1333, '#423d84'],
+  [0.2000, '#4247a7'],
+  [0.2667, '#3d54c1'],
+  [0.3333, '#3466c7'],
+  [0.4000, '#227ea9'],
+  [0.4667, '#2f9287'],
+  [0.5333, '#55a066'],
+  [0.6000, '#84a946'],
+  [0.6667, '#aeb127'],
+  [0.7333, '#dab512'],
+  [0.8000, '#f5be14'],
+  [0.8667, '#fdcf12'],
+  [0.9333, '#fee30f'],
+  [1.0000, '#f8f809'],
+];
+
 // ── Scatter animation ─────────────────────────────────────────────────────────
 export const ANIM_DURATION = 600; // ms
 

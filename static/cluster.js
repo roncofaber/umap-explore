@@ -1,6 +1,6 @@
 import { state } from './state.js';
 import { els } from './elements.js';
-import { MCS_STEPS, MS_STEPS, CSE_STEPS, TICK_FONT, AXIS_LABEL_FONT } from './constants.js';
+import { MCS_STEPS, MS_STEPS, CSE_STEPS, TICK_FONT, AXIS_LABEL_FONT, COLORSCALE } from './constants.js';
 import { fetchClusterResult } from './api.js';
 import { updateLegend, rerenderColors } from './legend.js';
 import { positionAllTicks, setLoading } from './ui.js';
@@ -20,7 +20,7 @@ function renderTreePlot(data) {
     width: bars.widths,
     marker: {
       color: bars.sizes_normalized,
-      colorscale: [[0, '#dde2ed'], [1, '#515978']],
+      colorscale: COLORSCALE,
       showscale: false,
       line: { width: 0 },
     },
