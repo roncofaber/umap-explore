@@ -147,6 +147,7 @@ export async function fetchTree() {
     state.clusterResult = {
       labels:         treeData.labels,
       colors:         treeData.colors,
+      probabilities:  treeData.probabilities,
       n_clusters:     treeData.n_clusters,
       n_noise:        treeData.n_noise,
       cluster_names:  treeData.cluster_names,
@@ -173,7 +174,7 @@ export function setClusterView(view) {
   els.plot.closest('#plot-wrapper').hidden = isTree;
   els.treeWrapper.hidden = !isTree;
   els.hcSection.hidden = isTree;
-  if (isTree) fetchTree();
+  if (isTree) fetchTree(); else rerenderColors();
 }
 
 export async function fetchAndCluster() {
