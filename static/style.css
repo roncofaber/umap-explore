@@ -885,7 +885,7 @@ input[type="range"]::-moz-range-thumb {
 #plot-wrapper {
   position: relative;
   aspect-ratio: 1;
-  width: min(100%, calc(100svh - 48px - 3rem));
+  width: min(100%, calc(100svh - 48px - 1.5rem));
   max-width: 900px;
   box-shadow: var(--shadow-card);
 }
@@ -896,7 +896,7 @@ input[type="range"]::-moz-range-thumb {
 #tree-wrapper {
   width: min(100%, 900px);
   max-width: 900px;
-  height: min(calc(100svh - 48px - 3rem), 500px);
+  height: min(calc(100svh - 48px - 1.5rem), 500px);
   transition: opacity 0.25s ease;
 }
 
